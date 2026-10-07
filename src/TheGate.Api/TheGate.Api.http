@@ -3,3 +3,8 @@
 GET {{TheGate.Api_HostAddress}}/health
 
 ###
+
+GET {{TheGate.Api_HostAddress}}/api/offers
+Accept: application/json
+
+###

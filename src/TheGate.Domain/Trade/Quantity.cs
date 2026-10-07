@@ -10,6 +10,15 @@ public sealed record Quantity
         }
 
         ArgumentException.ThrowIfNullOrWhiteSpace(unitCode);
+        if (decimal.Round(value, 3) != value)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "Quantity supports at most three decimal places.");
+        }
+
+        if (unitCode.Trim().Length > 16)
+        {
+            throw new ArgumentOutOfRangeException(nameof(unitCode), "Unit code cannot exceed 16 characters.");
+        }
 
         Value = value;
         UnitCode = unitCode.Trim().ToUpperInvariant();

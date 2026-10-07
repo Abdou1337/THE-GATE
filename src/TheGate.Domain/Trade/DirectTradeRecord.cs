@@ -2,7 +2,7 @@ namespace TheGate.Domain.Trade;
 
 public sealed class DirectTradeRecord
 {
-    private DirectTradeRecord(
+    public DirectTradeRecord(
         Guid id,
         Guid offerId,
         Guid producerOrganizationId,
@@ -11,6 +11,30 @@ public sealed class DirectTradeRecord
         Quantity agreedQuantity,
         DateTimeOffset recordedAtUtc)
     {
+        if (id == Guid.Empty || offerId == Guid.Empty)
+        {
+            throw new ArgumentException("Trade and offer IDs cannot be empty.");
+        }
+
+        if (producerOrganizationId == Guid.Empty ||
+            buyerOrganizationId == Guid.Empty ||
+            producerOrganizationId == buyerOrganizationId)
+        {
+            throw new ArgumentException("Producer and buyer must be distinct, identified organizations.");
+        }
+
+        if (initiatedByOrganizationId != producerOrganizationId &&
+            initiatedByOrganizationId != buyerOrganizationId)
+        {
+            throw new ArgumentException("A direct trade record must be initiated by the producer or buyer.", nameof(initiatedByOrganizationId));
+        }
+
+        ArgumentNullException.ThrowIfNull(agreedQuantity);
+        if (recordedAtUtc.Offset != TimeSpan.Zero)
+        {
+            throw new ArgumentException("Record time must be UTC.", nameof(recordedAtUtc));
+        }
+
         Id = id;
         OfferId = offerId;
         ProducerOrganizationId = producerOrganizationId;
@@ -70,11 +94,8 @@ public sealed class DirectTradeRecord
             throw new InvalidOperationException("Agreed quantity is below the minimum direct trade quantity.");
         }
 
-        var id = Guid.NewGuid();
-        offer.Allocate(id, agreedQuantity);
-
         return new DirectTradeRecord(
-            id,
+            Guid.NewGuid(),
             offer.Id,
             offer.ProducerOrganizationId,
             buyerOrganizationId,

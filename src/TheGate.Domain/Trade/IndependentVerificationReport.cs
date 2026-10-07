@@ -18,6 +18,10 @@ public sealed record IndependentVerificationReport
         ArgumentNullException.ThrowIfNull(tradeRecord);
         ArgumentNullException.ThrowIfNull(measuredQuantity);
         ArgumentException.ThrowIfNullOrWhiteSpace(evidenceReference);
+        if (evidenceReference.Trim().Length > 2048)
+        {
+            throw new ArgumentOutOfRangeException(nameof(evidenceReference), "Evidence reference cannot exceed 2048 characters.");
+        }
 
         if (verifierOrganizationId == Guid.Empty)
         {
