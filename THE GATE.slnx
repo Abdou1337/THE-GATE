@@ -1,1 +1,8 @@
-<Solution />
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TheGate.Api/TheGate.Api.csproj" />
+    <Project Path="src/TheGate.Application/TheGate.Application.csproj" />
+    <Project Path="src/TheGate.Domain/TheGate.Domain.csproj" />
+    <Project Path="src/TheGate.Infrastructure/TheGate.Infrastructure.csproj" />
+  </Folder>
+</Solution>
