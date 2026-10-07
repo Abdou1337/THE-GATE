@@ -376,7 +376,7 @@ public sealed class ApiWorkflowTests
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/")).StatusCode);
         var homepage = await client.GetStringAsync("/");
         Assert.Contains("href=\"/workspace.html\"", homepage);
-        Assert.Contains("Les bonnes rencontres.", homepage);
+        Assert.Contains("Vos produits africains.", homepage);
         Assert.Contains("id=\"unit-filter\"", homepage);
         Assert.Contains("Producteur", homepage);
         Assert.Contains("Acheteur", homepage);

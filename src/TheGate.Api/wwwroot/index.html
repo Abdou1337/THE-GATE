@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#123f35">
+  <meta name="theme-color" content="#064538">
   <meta name="description" content="Découvrez des offres africaines et échangez directement avec les producteurs. THE GATE structure les transactions sans s'interposer dans le commerce.">
   <title>THE GATE — Le commerce direct, en confiance</title>
   <style>
@@ -183,6 +183,62 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
     }
+    :root { --green: #064538; --green-deep: #023b32; --lime: #e4efb3; --paper: #fffdf7; background: #f8f7f0; }
+    .site-header { height: 76px; border-bottom: 1px solid #ffffff2c; background: var(--green-deep); }
+    .brand, .brand small, .nav a { color: #fff; }
+    .brand-mark { color: var(--green-deep); background: #e2eeb1; }
+    .nav a:hover, .nav a:focus-visible { color: #d9eba5; }
+    .nav .nav-cta { border-color: #a6ccab; color: #fff; }
+    .hero { width: 100%; max-width: none; padding: 72px max(24px, calc((100% - 1180px) / 2)) 76px; color: #fff; background: radial-gradient(circle at 83% 25%, #236950 0, transparent 43%), linear-gradient(125deg, #023b32, #065341); }
+    .hero-grid { gap: 65px; }
+    .hero .eyebrow { color: #d9e9ba; }
+    .hero .eyebrow::before { background: #b5d091; }
+    .hero h1 { font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif; font-size: clamp(2.7rem, 5.1vw, 4.8rem); font-weight: 800; letter-spacing: -.048em; line-height: 1.08; }
+    .hero h1 em { color: #c8e2a7; font-style: normal; font-weight: 800; }
+    .hero-copy { color: #e5f0e8; }
+    .hero-note { color: #d4e9d8; }
+    .hero-note svg { color: #c2e5b2; }
+    .hero .button-primary, .contact-link { color: #fff; background: #07832e; }
+    .hero .button-primary:hover { background: #0a7130; }
+    .hero .button-secondary { color: #fff; border-color: #c2ddcb; }
+    .hero-art { min-height: 400px; border-radius: 24px; background: #d6e5c4; }
+    .hero-art::before, .hero-art::after { border-color: #c8dfbd77; }
+    .art-scene { width: 100%; height: 100%; aspect-ratio: 1.12; border-radius: 24px; }
+    .art-label { bottom: 6%; }
+    .principles { border-color: #d6dfd2; background: #f0f4e9; }
+    .principle { color: var(--green-deep); font-weight: 750; }
+    .section-heading h2, .offer-card h3, .step h3 { font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif; font-weight: 750; letter-spacing: -.04em; }
+    .catalog-wrap { border-radius: 18px; }
+    .offer-card { border-radius: 13px; box-shadow: 0 8px 22px #123f350b; }
+    .offer-card h3 { font-size: 1.36rem; }
+    .contact-link { min-height: 36px; justify-content: center; padding: 7px 11px; border-radius: 8px; font-size: .75rem; }
+    .contact-link:hover { color: #fff; background: #065d29; text-decoration: none; }
+    .how { background: #eef2e8; }
+    .step, .actor-card { background: var(--paper); }
+    .site-footer { border: 0; color: #dbe9dd; background: var(--green-deep); }
+    .footer-brand { color: #fff; }
+    @media (max-width: 850px) {
+      .hero { padding: 56px 24px; }
+      .hero-grid { gap: 24px; }
+      .hero-art { min-height: 330px; }
+    }
+    @media (max-width: 620px) {
+      .site-header { height: auto; min-height: 68px; }
+      .header-inner { flex-wrap: wrap; padding: 14px 0; }
+      .nav { justify-content: space-between; width: 100%; gap: 8px; }
+      .nav a:nth-child(2) { display: inline; }
+      .nav a { font-size: .7rem; }
+      .nav .nav-cta { padding: 8px; text-align: center; }
+      .hero { padding: 42px 16px 50px; }
+      .hero h1 { font-size: clamp(2.35rem, 10vw, 3.3rem); }
+      .hero-art { margin: 12px 0 0; min-height: 270px; }
+      .art-scene { width: 100%; }
+      .principle-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 14px 0; }
+      .principle { border: 1px solid #cbdacb !important; border-radius: 9px; padding: 10px; font-size: .75rem; }
+      .principle:last-child { grid-column: 1 / -1; }
+      .offer-card-footer { flex-wrap: wrap; }
+      .footer-inner { gap: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -206,14 +262,14 @@
     <section class="hero shell" aria-labelledby="hero-title">
       <div class="hero-grid">
         <div>
-          <span class="eyebrow">Le commerce africain, sans détour</span>
-          <h1 id="hero-title">Les bonnes rencontres.<br><em>En toute confiance.</em></h1>
+          <span class="eyebrow">THE GATE · Africa Global Trade</span>
+          <h1 id="hero-title">Vos produits africains.<br><em>Vos échanges directs.</em></h1>
           <p class="hero-copy">Découvrez des offres déclarées par les producteurs africains. Entrez en contact directement, puis structurez votre transaction avec les bons partenaires.</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#offres">Explorer les offres
+            <a class="button button-primary" href="#offres">Découvrir les offres
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
-            <a class="button button-secondary" href="#parcours">Comment ça marche</a>
+            <a class="button button-secondary" href="/workspace.html">Essayer l’espace démo</a>
           </div>
           <p class="hero-note">
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.5 16 5v4.6c0 3.8-2.6 6.6-6 7.9-3.4-1.3-6-4.1-6-7.9V5l6-2.5Z" stroke="currentColor" stroke-width="1.5"/><path d="m7.2 10 1.8 1.8 3.8-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -252,7 +308,7 @@
 
     <section class="section catalog shell" id="offres" aria-labelledby="offers-title">
       <div class="section-heading">
-        <div><span class="eyebrow">La sélection du moment</span><h2 id="offers-title">Des offres à découvrir.</h2></div>
+        <div><span class="eyebrow">Marketplace · offres déclarées</span><h2 id="offers-title">Découvrez les produits.</h2></div>
         <p>Parcourez les quantités déclarées et contactez le producteur pour discuter directement des conditions.</p>
       </div>
       <div class="catalog-wrap">
@@ -297,27 +353,27 @@
         <article class="actor-card">
           <span class="actor-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20h16M6 20V9l6-5 6 5v11M9 20v-6h6v6M3 10l9-7 9 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <h3>Producteur</h3><p>Publiez une offre déclarée, partagez un contact direct et confirmez l’accord conclu avec l’acheteur.</p>
-          <span class="actor-state">API métier disponible · espace web à connecter</span>
+          <span class="actor-state">Parcours disponible en démonstration locale</span>
         </article>
         <article class="actor-card">
           <span class="actor-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m15.5 15.5 5 5M8 10.5h5M10.5 8v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
           <h3>Acheteur</h3><p>Parcourez le catalogue, contactez le producteur, puis enregistrez l’accord sans réserver le stock.</p>
-          <span class="actor-state">API métier disponible · espace web à connecter</span>
+          <span class="actor-state">Parcours disponible en démonstration locale</span>
         </article>
         <article class="actor-card">
           <span class="actor-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 20 6v5.5c0 4.4-3.3 7.7-8 9.5-4.7-1.8-8-5.1-8-9.5V6l8-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m8.5 12 2.2 2.2 4.8-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <h3>Inspecteur indépendant</h3><p>Consignez une quantité mesurée et une référence de preuve, séparément de la déclaration du producteur.</p>
-          <span class="actor-state">API métier disponible · espace web à connecter</span>
+          <span class="actor-state">Parcours disponible en démonstration locale</span>
         </article>
         <article class="actor-card">
           <span class="actor-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7h11v11H3zM14 11h4l3 3v4h-7z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="18.5" r="1.7" fill="#e8f0e7" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="18.5" r="1.7" fill="#e8f0e7" stroke="currentColor" stroke-width="1.6"/></svg></span>
           <h3>Partenaire logistique</h3><p>Créez un parcours d’expédition et consignez ses jalons dans l’ordre, sous votre responsabilité.</p>
-          <span class="actor-state">API métier disponible · espace web à connecter</span>
+          <span class="actor-state">Parcours disponible en démonstration locale</span>
         </article>
         <article class="actor-card">
           <span class="actor-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
           <h3>Partenaire de paiement</h3><p>Déclarez le statut d’une obligation de paiement identifiée. THE GATE ne reçoit ni ne déplace les fonds.</p>
-          <span class="actor-state">API métier disponible · espace web à connecter</span>
+          <span class="actor-state">Parcours disponible en démonstration locale</span>
         </article>
       </div>
     </section>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#123f35">
+  <meta name="theme-color" content="#064538">
   <title>Mon espace — THE GATE</title>
   <style>
     :root { font-family: Inter, "Segoe UI", system-ui, sans-serif; color: #17372f; background: #f4f6f1; --green: #123f35; --line: #dfe6dc; --muted: #6b7c72; --paper: #fffefa; }
@@ -63,6 +63,45 @@
     :focus-visible { outline: 3px solid #86a96e; outline-offset: 3px; }
     @media (max-width: 760px) { .dashboard-grid { grid-template-columns: 1fr; } }
     @media (max-width: 520px) { .topbar { height: 62px; padding: 0 16px; } main { width: calc(100% - 30px); margin-top: 25px; } .panel { padding: 17px; } .form-grid { grid-template-columns: 1fr; } .field.full { grid-column: auto; } .workspace-head { align-items: flex-start; } .workspace-head h1 { font-size: 1.8rem; } .org { max-width: 210px; overflow-wrap: anywhere; } }
+    :root { --green: #064538; --paper: #fffdf7; background: #f8f7f0; }
+    .topbar { min-height: 76px; border-color: #ffffff2c; background: #023b32; }
+    .brand, .link { color: #fff; }
+    .brand-mark { color: #023b32; background: #e2eeb1; }
+    .demo-badge { border-color: #bad8a5; color: #f1f7e7; background: #235c43; }
+    main { margin-top: 0; }
+    #login-view, .workspace-head { margin: 0 -22px 26px; padding: 50px 26px; color: #fff; background: radial-gradient(circle at 85% 25%, #276b50 0, transparent 48%), linear-gradient(120deg, #023b32, #065341); }
+    #login-view { padding-bottom: 42px; }
+    #login-view .eyebrow, .workspace-head .eyebrow { color: #d6e9ac; }
+    h1 { font-family: Inter, "Segoe UI", system-ui, sans-serif; font-weight: 800; letter-spacing: -.04em; }
+    #login-view .intro, .workspace-head .org { color: #e3eee6; }
+    #login-view .notice { border-color: #bfd2b3; color: #fff; background: #ffffff1c; }
+    .personas { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .persona { min-height: 165px; border-color: #d6e2d1; color: #17372f; background: #fffdf7; box-shadow: 0 10px 25px #023b321a; }
+    .persona-icon { color: #fff; background: #087d36; }
+    .persona:hover { border-color: #7fca93; }
+    .workspace-head { margin-bottom: 0; }
+    .logout { border-color: #b4d1b5; color: #fff; background: #ffffff1a; }
+    .logout:hover { background: #ffffff30; }
+    .panel { border-color: #d9e3d5; border-radius: 14px; box-shadow: 0 10px 28px #123f350b; }
+    .panel h2 { color: #023b32; font-size: 1.18rem; }
+    .primary { background: #07832e; }
+    .primary:hover { background: #065d29; }
+    .status { color: #185e31; }
+    footer { padding: 22px; border-radius: 12px; color: #e0ece2; background: #023b32; }
+    :focus-visible { outline-color: #9fcc90; }
+    @media (max-width: 760px) {
+      #login-view, .workspace-head { margin-right: -20px; margin-left: -20px; padding: 34px 20px; }
+      .personas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 520px) {
+      .topbar { height: auto; min-height: 62px; padding: 12px 16px; }
+      .top-actions { flex-wrap: wrap; justify-content: flex-end; }
+      main { margin-top: 0; }
+      #login-view, .workspace-head { margin-right: -15px; margin-left: -15px; padding: 32px 15px; }
+      .personas { grid-template-columns: 1fr; }
+      .persona { min-height: 115px; }
+      .workspace-head { flex-wrap: wrap; }
+    }
   </style>
 </head>
 <body>
@@ -74,7 +113,7 @@
     <section id="login-view">
       <span class="eyebrow">Espace de travail</span>
       <h1>Quel est votre rôle ?</h1>
-      <p class="intro">Choisissez un profil local de démonstration pour parcourir les workflows MVP.</p>
+      <p class="intro">Explorez chaque parcours métier grâce aux profils de démonstration locale.</p>
       <div class="notice" id="environment-notice">Le mode démonstration crée une session locale simulée. Il ne crée pas de compte réel et ne doit jamais être utilisé pour des opérations de production.</div>
       <div class="personas" id="personas">
         <button class="persona" data-role="producer"><span class="persona-icon">P</span><strong>Producteur</strong><small>Publier une offre et confirmer les accords en attente.</small></button>
