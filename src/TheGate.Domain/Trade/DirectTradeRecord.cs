@@ -1,5 +1,11 @@
 namespace TheGate.Domain.Trade;
 
+public enum DirectTradeRecordStatus
+{
+    AwaitingProducerConfirmation,
+    Confirmed
+}
+
 public sealed class DirectTradeRecord
 {
     public DirectTradeRecord(
@@ -9,7 +15,9 @@ public sealed class DirectTradeRecord
         Guid buyerOrganizationId,
         Guid initiatedByOrganizationId,
         Quantity agreedQuantity,
-        DateTimeOffset recordedAtUtc)
+        DateTimeOffset recordedAtUtc,
+        DirectTradeRecordStatus status = DirectTradeRecordStatus.AwaitingProducerConfirmation,
+        DateTimeOffset? producerConfirmedAtUtc = null)
     {
         if (id == Guid.Empty || offerId == Guid.Empty)
         {
@@ -35,6 +43,12 @@ public sealed class DirectTradeRecord
             throw new ArgumentException("Record time must be UTC.", nameof(recordedAtUtc));
         }
 
+        if ((status == DirectTradeRecordStatus.Confirmed) != (producerConfirmedAtUtc is not null) ||
+            (producerConfirmedAtUtc is not null && producerConfirmedAtUtc.Value.Offset != TimeSpan.Zero))
+        {
+            throw new ArgumentException("Producer confirmation time must be UTC and match the record status.", nameof(producerConfirmedAtUtc));
+        }
+
         Id = id;
         OfferId = offerId;
         ProducerOrganizationId = producerOrganizationId;
@@ -42,6 +56,8 @@ public sealed class DirectTradeRecord
         InitiatedByOrganizationId = initiatedByOrganizationId;
         AgreedQuantity = agreedQuantity;
         RecordedAtUtc = recordedAtUtc;
+        Status = status;
+        ProducerConfirmedAtUtc = producerConfirmedAtUtc;
     }
 
     public Guid Id { get; }
@@ -57,6 +73,31 @@ public sealed class DirectTradeRecord
     public Quantity AgreedQuantity { get; }
 
     public DateTimeOffset RecordedAtUtc { get; }
+
+    public DirectTradeRecordStatus Status { get; private set; }
+
+    public DateTimeOffset? ProducerConfirmedAtUtc { get; private set; }
+
+    public void ConfirmByProducer(Guid producerOrganizationId, DateTimeOffset confirmedAtUtc)
+    {
+        if (producerOrganizationId != ProducerOrganizationId)
+        {
+            throw new InvalidOperationException("Only the producer associated with this offer can confirm the trade record.");
+        }
+
+        if (Status != DirectTradeRecordStatus.AwaitingProducerConfirmation)
+        {
+            throw new InvalidOperationException("Trade record has already been confirmed.");
+        }
+
+        if (confirmedAtUtc.Offset != TimeSpan.Zero)
+        {
+            throw new ArgumentException("Confirmation time must be UTC.", nameof(confirmedAtUtc));
+        }
+
+        Status = DirectTradeRecordStatus.Confirmed;
+        ProducerConfirmedAtUtc = confirmedAtUtc;
+    }
 
     public static DirectTradeRecord Register(
         ProductOffer offer,

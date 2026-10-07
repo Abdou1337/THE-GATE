@@ -32,6 +32,10 @@ public sealed class TradeDbContext(DbContextOptions<TradeDbContext> options) : D
             entity.HasKey(row => row.Id);
             entity.Property(row => row.UnitCode).HasMaxLength(16).IsRequired();
             entity.Property(row => row.AgreedQuantity).HasPrecision(18, 3);
+            entity.Property(row => row.Status).HasMaxLength(40).IsRequired();
+            entity.ToTable(table => table.HasCheckConstraint(
+                "CK_DirectTradeRecords_Status",
+                "\"Status\" IN ('AwaitingProducerConfirmation', 'Confirmed')"));
             entity.HasOne<ProductOfferRow>()
                 .WithMany()
                 .HasForeignKey(row => row.OfferId)
@@ -90,6 +94,10 @@ public sealed class DirectTradeRow
     public string UnitCode { get; set; } = string.Empty;
 
     public DateTimeOffset RecordedAtUtc { get; set; }
+
+    public string Status { get; set; } = string.Empty;
+
+    public DateTimeOffset? ProducerConfirmedAtUtc { get; set; }
 }
 
 public sealed class VerificationRow

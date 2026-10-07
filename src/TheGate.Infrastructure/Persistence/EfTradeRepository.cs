@@ -40,10 +40,6 @@ public sealed class EfTradeRepository(TradeDbContext dbContext) : ITradeReposito
         DateTimeOffset recordedAtUtc,
         CancellationToken cancellationToken)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.ReadCommitted,
-            cancellationToken);
-
         var offerRow = await dbContext.ProductOffers
             .AsNoTracking()
             .SingleOrDefaultAsync(row => row.Id == offerId, cancellationToken);
@@ -60,28 +56,79 @@ public sealed class EfTradeRepository(TradeDbContext dbContext) : ITradeReposito
             agreedQuantity,
             recordedAtUtc);
 
-        var updated = await dbContext.ProductOffers
+        dbContext.DirectTradeRecords.Add(ToRow(tradeRecord));
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new TradeRegistrationResult(TradeRegistrationStatus.Registered, tradeRecord);
+    }
+
+    public async Task<TradeConfirmationResult> ConfirmTradeAsync(
+        Guid tradeRecordId,
+        Guid producerOrganizationId,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.ReadCommitted,
+            cancellationToken);
+
+        var tradeRow = await dbContext.DirectTradeRecords
+            .AsNoTracking()
+            .SingleOrDefaultAsync(row => row.Id == tradeRecordId, cancellationToken);
+
+        if (tradeRow is null)
+        {
+            return new TradeConfirmationResult(TradeConfirmationStatus.TradeRecordNotFound, null);
+        }
+
+        if (tradeRow.ProducerOrganizationId != producerOrganizationId)
+        {
+            return new TradeConfirmationResult(TradeConfirmationStatus.NotProducer, null);
+        }
+
+        if (tradeRow.Status != nameof(DirectTradeRecordStatus.AwaitingProducerConfirmation))
+        {
+            return new TradeConfirmationResult(TradeConfirmationStatus.AlreadyConfirmed, null);
+        }
+
+        var tradeRecord = ToDomain(tradeRow);
+        tradeRecord.ConfirmByProducer(producerOrganizationId, confirmedAtUtc);
+
+        var tradeUpdated = await dbContext.DirectTradeRecords
             .Where(row =>
-                row.Id == offerId &&
-                row.UnitCode == agreedQuantity.UnitCode &&
-                agreedQuantity.Value >= row.MinimumDirectTradeQuantity &&
-                row.AllocatedQuantity + agreedQuantity.Value <= row.DeclaredQuantity)
+                row.Id == tradeRecordId &&
+                row.Status == nameof(DirectTradeRecordStatus.AwaitingProducerConfirmation))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(row => row.Status, nameof(DirectTradeRecordStatus.Confirmed))
+                    .SetProperty(row => row.ProducerConfirmedAtUtc, confirmedAtUtc),
+                cancellationToken);
+
+        if (tradeUpdated == 0)
+        {
+            return new TradeConfirmationResult(TradeConfirmationStatus.AlreadyConfirmed, null);
+        }
+
+        var offerUpdated = await dbContext.ProductOffers
+            .Where(row =>
+                row.Id == tradeRow.OfferId &&
+                row.UnitCode == tradeRow.UnitCode &&
+                tradeRow.AgreedQuantity >= row.MinimumDirectTradeQuantity &&
+                row.AllocatedQuantity + tradeRow.AgreedQuantity <= row.DeclaredQuantity)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(
                     row => row.AllocatedQuantity,
-                    row => row.AllocatedQuantity + agreedQuantity.Value),
+                    row => row.AllocatedQuantity + tradeRow.AgreedQuantity),
                 cancellationToken);
 
-        if (updated == 0)
+        if (offerUpdated == 0)
         {
-            return new TradeRegistrationResult(TradeRegistrationStatus.InsufficientQuantity, null);
+            await transaction.RollbackAsync(cancellationToken);
+            return new TradeConfirmationResult(TradeConfirmationStatus.InsufficientQuantity, null);
         }
 
-        dbContext.DirectTradeRecords.Add(ToRow(tradeRecord));
-        await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-
-        return new TradeRegistrationResult(TradeRegistrationStatus.Registered, tradeRecord);
+        return new TradeConfirmationResult(TradeConfirmationStatus.Confirmed, tradeRecord);
     }
 
     public async Task<DirectTradeRecord?> GetTradeRecordAsync(
@@ -187,7 +234,9 @@ public sealed class EfTradeRepository(TradeDbContext dbContext) : ITradeReposito
             InitiatedByOrganizationId = tradeRecord.InitiatedByOrganizationId,
             AgreedQuantity = tradeRecord.AgreedQuantity.Value,
             UnitCode = tradeRecord.AgreedQuantity.UnitCode,
-            RecordedAtUtc = tradeRecord.RecordedAtUtc
+            RecordedAtUtc = tradeRecord.RecordedAtUtc,
+            Status = tradeRecord.Status.ToString(),
+            ProducerConfirmedAtUtc = tradeRecord.ProducerConfirmedAtUtc
         };
 
     private static DirectTradeRecord ToDomain(DirectTradeRow row) =>
@@ -198,7 +247,9 @@ public sealed class EfTradeRepository(TradeDbContext dbContext) : ITradeReposito
             row.BuyerOrganizationId,
             row.InitiatedByOrganizationId,
             new Quantity(row.AgreedQuantity, row.UnitCode),
-            row.RecordedAtUtc);
+            row.RecordedAtUtc,
+            Enum.Parse<DirectTradeRecordStatus>(row.Status),
+            row.ProducerConfirmedAtUtc);
 
     private static VerificationRow ToRow(IndependentVerificationReport report) =>
         new()

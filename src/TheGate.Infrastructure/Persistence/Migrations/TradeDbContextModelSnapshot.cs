@@ -41,11 +41,19 @@ namespace TheGate.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("OfferId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ProducerConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("ProducerOrganizationId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("RecordedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
 
                     b.Property<string>("UnitCode")
                         .IsRequired()
@@ -60,7 +68,10 @@ namespace TheGate.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ProducerOrganizationId");
 
-                    b.ToTable("DirectTradeRecords");
+                    b.ToTable("DirectTradeRecords", t =>
+                        {
+                            t.HasCheckConstraint("CK_DirectTradeRecords_Status", "\"Status\" IN ('AwaitingProducerConfirmation', 'Confirmed')");
+                        });
                 });
 
             modelBuilder.Entity("TheGate.Infrastructure.Persistence.ProductOfferRow", b =>

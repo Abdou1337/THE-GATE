@@ -41,11 +41,14 @@ namespace TheGate.Infrastructure.Persistence.Migrations
                     InitiatedByOrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     AgreedQuantity = table.Column<decimal>(type: "numeric(18,3)", precision: 18, scale: 3, nullable: false),
                     UnitCode = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    RecordedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                    RecordedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    ProducerConfirmedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DirectTradeRecords", x => x.Id);
+                    table.CheckConstraint("CK_DirectTradeRecords_Status", "\"Status\" IN ('AwaitingProducerConfirmation', 'Confirmed')");
                     table.ForeignKey(
                         name: "FK_DirectTradeRecords_ProductOffers_OfferId",
                         column: x => x.OfferId,

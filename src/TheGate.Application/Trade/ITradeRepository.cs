@@ -17,6 +17,12 @@ public interface ITradeRepository
         DateTimeOffset recordedAtUtc,
         CancellationToken cancellationToken);
 
+    Task<TradeConfirmationResult> ConfirmTradeAsync(
+        Guid tradeRecordId,
+        Guid producerOrganizationId,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken);
+
     Task<DirectTradeRecord?> GetTradeRecordAsync(Guid tradeRecordId, CancellationToken cancellationToken);
 
     Task<IndependentVerificationReport> AddVerificationAsync(
@@ -50,3 +56,16 @@ public enum TradeRegistrationStatus
 }
 
 public sealed record TradeRegistrationResult(TradeRegistrationStatus Status, DirectTradeRecord? TradeRecord);
+
+public enum TradeConfirmationStatus
+{
+    Confirmed,
+    TradeRecordNotFound,
+    NotProducer,
+    AlreadyConfirmed,
+    InsufficientQuantity
+}
+
+public sealed record TradeConfirmationResult(
+    TradeConfirmationStatus Status,
+    DirectTradeRecord? TradeRecord);

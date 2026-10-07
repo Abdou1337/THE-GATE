@@ -65,18 +65,39 @@ public sealed class ApiWorkflowTests
         Assert.Equal(producerOrganizationId, trade.ProducerOrganizationId);
         Assert.Equal(buyerOrganizationId, trade.BuyerOrganizationId);
         Assert.Equal(60m, trade.AgreedQuantity);
+        Assert.Equal("AwaitingProducerConfirmation", trade.Status);
 
+        var outsiderOrganizationId = Guid.NewGuid();
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(outsiderOrganizationId, "producer");
+        Assert.Equal(
+            HttpStatusCode.Forbidden,
+            (await client.PostAsync($"/api/trades/{trade.Id}/confirm", content: null)).StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
+        var confirmationResponse = await client.PostAsync($"/api/trades/{trade.Id}/confirm", content: null);
+        Assert.Equal(HttpStatusCode.OK, confirmationResponse.StatusCode);
+        var confirmedTrade = await confirmationResponse.Content.ReadFromJsonAsync<TradeRecordResponse>();
+        Assert.NotNull(confirmedTrade);
+        Assert.Equal("Confirmed", confirmedTrade.Status);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(buyerOrganizationId, "buyer");
         var competingTradeResponse = await client.PostAsJsonAsync(
             $"/api/offers/{offer.Id}/trades",
             new RegisterTradeRequest(60m, "kg"));
-        Assert.Equal(HttpStatusCode.Conflict, competingTradeResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, competingTradeResponse.StatusCode);
+        var competingTrade = await competingTradeResponse.Content.ReadFromJsonAsync<TradeRecordResponse>();
+        Assert.NotNull(competingTrade);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
+        Assert.Equal(
+            HttpStatusCode.Conflict,
+            (await client.PostAsync($"/api/trades/{competingTrade.Id}/confirm", content: null)).StatusCode);
 
         var refreshedOffer = await (await client.GetAsync($"/api/offers/{offer.Id}"))
             .Content.ReadFromJsonAsync<OfferListing>();
         Assert.NotNull(refreshedOffer);
         Assert.Equal(40m, refreshedOffer.RemainingQuantity);
 
-        var outsiderOrganizationId = Guid.NewGuid();
         client.DefaultRequestHeaders.Authorization = factory.BearerToken(outsiderOrganizationId, "buyer");
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync($"/api/trades/{trade.Id}")).StatusCode);
 
@@ -154,19 +175,33 @@ public sealed class ApiWorkflowTests
         var offer = await offerResponse.Content.ReadFromJsonAsync<OfferListing>();
         Assert.NotNull(offer);
 
+        var buyerOrganizationId = Guid.NewGuid();
+        var secondBuyerOrganizationId = Guid.NewGuid();
         using var firstBuyer = factory.CreateClient();
         using var secondBuyer = factory.CreateClient();
-        firstBuyer.DefaultRequestHeaders.Authorization = factory.BearerToken(Guid.NewGuid(), "buyer");
-        secondBuyer.DefaultRequestHeaders.Authorization = factory.BearerToken(Guid.NewGuid(), "buyer");
-        var responses = await Task.WhenAll(
-            firstBuyer.PostAsJsonAsync(
-                $"/api/offers/{offer.Id}/trades",
-                new RegisterTradeRequest(70m, "kg")),
-            secondBuyer.PostAsJsonAsync(
-                $"/api/offers/{offer.Id}/trades",
-                new RegisterTradeRequest(70m, "kg")));
+        firstBuyer.DefaultRequestHeaders.Authorization = factory.BearerToken(buyerOrganizationId, "buyer");
+        secondBuyer.DefaultRequestHeaders.Authorization = factory.BearerToken(secondBuyerOrganizationId, "buyer");
+        var firstTradeResponse = await firstBuyer.PostAsJsonAsync(
+            $"/api/offers/{offer.Id}/trades",
+            new RegisterTradeRequest(70m, "kg"));
+        var secondTradeResponse = await secondBuyer.PostAsJsonAsync(
+            $"/api/offers/{offer.Id}/trades",
+            new RegisterTradeRequest(70m, "kg"));
+        Assert.Equal(HttpStatusCode.Created, firstTradeResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, secondTradeResponse.StatusCode);
+        var firstTrade = await firstTradeResponse.Content.ReadFromJsonAsync<TradeRecordResponse>();
+        var secondTrade = await secondTradeResponse.Content.ReadFromJsonAsync<TradeRecordResponse>();
+        Assert.NotNull(firstTrade);
+        Assert.NotNull(secondTrade);
 
-        Assert.Contains(responses, response => response.StatusCode == HttpStatusCode.Created);
+        using var producerConfirmationClient = factory.CreateClient();
+        producerConfirmationClient.DefaultRequestHeaders.Authorization =
+            factory.BearerToken(offer.ProducerOrganizationId, "producer");
+        var responses = await Task.WhenAll(
+            producerConfirmationClient.PostAsync($"/api/trades/{firstTrade.Id}/confirm", content: null),
+            producerConfirmationClient.PostAsync($"/api/trades/{secondTrade.Id}/confirm", content: null));
+
+        Assert.Contains(responses, response => response.StatusCode == HttpStatusCode.OK);
         Assert.Contains(responses, response => response.StatusCode == HttpStatusCode.Conflict);
     }
 }

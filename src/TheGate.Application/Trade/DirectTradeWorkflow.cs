@@ -43,6 +43,17 @@ public sealed class DirectTradeWorkflow(ITradeRepository repository)
             recordedAtUtc,
             cancellationToken);
 
+    public Task<TradeConfirmationResult> ConfirmTradeAsync(
+        Guid tradeRecordId,
+        Guid producerOrganizationId,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken) =>
+        repository.ConfirmTradeAsync(
+            tradeRecordId,
+            producerOrganizationId,
+            confirmedAtUtc,
+            cancellationToken);
+
     public Task<DirectTradeRecord?> GetTradeRecordAsync(Guid tradeRecordId, CancellationToken cancellationToken) =>
         repository.GetTradeRecordAsync(tradeRecordId, cancellationToken);
 

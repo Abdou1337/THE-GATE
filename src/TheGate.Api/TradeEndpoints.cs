@@ -138,6 +138,39 @@ public static class TradeEndpoints
             })
             .RequireAuthorization();
 
+        api.MapPost("/trades/{tradeRecordId:guid}/confirm", async (
+                Guid tradeRecordId,
+                ClaimsPrincipal principal,
+                DirectTradeWorkflow workflow,
+                TimeProvider timeProvider,
+                CancellationToken cancellationToken) =>
+            {
+                if (!TryGetOrganizationId(principal, out var producerOrganizationId))
+                {
+                    return Results.Forbid();
+                }
+
+                var result = await workflow.ConfirmTradeAsync(
+                    tradeRecordId,
+                    producerOrganizationId,
+                    timeProvider.GetUtcNow(),
+                    cancellationToken);
+
+                return result.Status switch
+                {
+                    TradeConfirmationStatus.TradeRecordNotFound => Results.NotFound(),
+                    TradeConfirmationStatus.NotProducer => Results.Forbid(),
+                    TradeConfirmationStatus.AlreadyConfirmed => Results.Conflict(
+                        new { error = "Trade record has already been confirmed." }),
+                    TradeConfirmationStatus.InsufficientQuantity => Results.Conflict(
+                        new { error = "The requested quantity is no longer available." }),
+                    TradeConfirmationStatus.Confirmed => Results.Ok(
+                        TradeRecordResponse.From(result.TradeRecord!)),
+                    _ => Results.Problem()
+                };
+            })
+            .RequireAuthorization("producer");
+
         api.MapPost("/trades/{tradeRecordId:guid}/verifications", async (
                 Guid tradeRecordId,
                 CreateVerificationRequest request,
@@ -232,7 +265,9 @@ public sealed record TradeRecordResponse(
     Guid BuyerOrganizationId,
     decimal AgreedQuantity,
     string UnitCode,
-    DateTimeOffset RecordedAtUtc)
+    DateTimeOffset RecordedAtUtc,
+    string Status,
+    DateTimeOffset? ProducerConfirmedAtUtc)
 {
     public static TradeRecordResponse From(DirectTradeRecord tradeRecord) =>
         new(
@@ -242,7 +277,9 @@ public sealed record TradeRecordResponse(
             tradeRecord.BuyerOrganizationId,
             tradeRecord.AgreedQuantity.Value,
             tradeRecord.AgreedQuantity.UnitCode,
-            tradeRecord.RecordedAtUtc);
+            tradeRecord.RecordedAtUtc,
+            tradeRecord.Status.ToString(),
+            tradeRecord.ProducerConfirmedAtUtc);
 }
 
 public sealed record VerificationResponse(
