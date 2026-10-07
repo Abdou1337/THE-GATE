@@ -332,7 +332,7 @@ public sealed class ApiWorkflowTests
         var producerClosure = await client.PostAsync(
             $"/api/trades/{trade.Id}/closure-confirmations",
             content: null);
-        Assert.Equal(HttpStatusCode.Conflict, producerClosure.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, producerClosure.StatusCode);
 
         client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/")).StatusCode);

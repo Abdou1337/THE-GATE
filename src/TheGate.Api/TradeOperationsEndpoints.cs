@@ -17,7 +17,11 @@ public static class TradeOperationsEndpoints
                 principal.FindFirstValue("organization_role") ?? string.Empty,
                 principal.FindFirstValue("name"),
                 principal.FindFirstValue("email"))))
-            .RequireAuthorization();
+            .RequireAuthorization(policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim("sub")
+                .RequireClaim("organization_id")
+                .RequireClaim("organization_role"));
 
         api.MapGet("/trades/{tradeRecordId:guid}/compliance-tasks", async (
                 Guid tradeRecordId,
@@ -357,6 +361,8 @@ public static class TradeOperationsEndpoints
                         new { error = "Every recorded payment obligation needs a payment-partner report." }),
                     TradeClosureStatus.LogisticsIncomplete => Results.Conflict(
                         new { error = "Every recorded shipment must reach the delivered milestone." }),
+                    TradeClosureStatus.AlreadyConfirmed when result.TradeRecord is not null =>
+                        Results.Ok(TradeRecordResponse.From(result.TradeRecord)),
                     TradeClosureStatus.AlreadyConfirmed => Results.Conflict(
                         new { error = "This party has already confirmed closure." }),
                     TradeClosureStatus.ConfirmationRecorded or TradeClosureStatus.Closed =>

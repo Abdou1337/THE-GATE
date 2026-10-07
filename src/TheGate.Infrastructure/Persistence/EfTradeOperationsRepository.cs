@@ -401,7 +401,10 @@ public sealed class EfTradeOperationsRepository(TradeDbContext dbContext) : ITra
 
         if (updated == 0)
         {
-            return new TradeClosureResult(TradeClosureStatus.AlreadyConfirmed, null);
+            var currentRow = await dbContext.DirectTradeRecords
+                .AsNoTracking()
+                .SingleAsync(row => row.Id == tradeRecordId, cancellationToken);
+            return new TradeClosureResult(TradeClosureStatus.AlreadyConfirmed, ToDomain(currentRow));
         }
 
         var updatedRow = await dbContext.DirectTradeRecords
