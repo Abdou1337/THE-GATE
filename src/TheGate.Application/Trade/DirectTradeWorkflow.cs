@@ -57,6 +57,11 @@ public sealed class DirectTradeWorkflow(ITradeRepository repository)
     public Task<DirectTradeRecord?> GetTradeRecordAsync(Guid tradeRecordId, CancellationToken cancellationToken) =>
         repository.GetTradeRecordAsync(tradeRecordId, cancellationToken);
 
+    public Task<IReadOnlyList<DirectTradeRecord>> GetTradeRecordsForOrganizationAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken) =>
+        repository.GetTradeRecordsForOrganizationAsync(organizationId, cancellationToken);
+
     public Task<IndependentVerificationReport> AddVerificationAsync(
         Guid tradeRecordId,
         Guid verifierOrganizationId,

@@ -138,6 +138,21 @@ public static class TradeEndpoints
             })
             .RequireAuthorization();
 
+        api.MapGet("/trades/mine", async (
+                ClaimsPrincipal principal,
+                DirectTradeWorkflow workflow,
+                CancellationToken cancellationToken) =>
+            {
+                if (!TryGetOrganizationId(principal, out var organizationId))
+                {
+                    return Results.Forbid();
+                }
+
+                var records = await workflow.GetTradeRecordsForOrganizationAsync(organizationId, cancellationToken);
+                return Results.Ok(records.Select(TradeRecordResponse.From));
+            })
+            .RequireAuthorization("trade-party");
+
         api.MapPost("/trades/{tradeRecordId:guid}/confirm", async (
                 Guid tradeRecordId,
                 ClaimsPrincipal principal,

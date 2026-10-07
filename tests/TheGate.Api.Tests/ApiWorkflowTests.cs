@@ -47,6 +47,37 @@ public sealed class ApiWorkflowTests
     }
 
     [Fact]
+    public async Task Development_demo_login_and_local_database_are_available_only_in_development()
+    {
+        using var factory = new DevelopmentApiFactory();
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        var mode = await client.GetFromJsonAsync<DevelopmentModeResponse>("/api/dev/session");
+        Assert.NotNull(mode);
+        Assert.True(mode.Enabled);
+        var offers = await client.GetFromJsonAsync<OfferListing[]>("/api/offers");
+        Assert.NotNull(offers);
+        Assert.Equal(3, offers.Length);
+
+        var login = await client.PostAsJsonAsync("/api/dev/session", new DevelopmentSessionRequest("producer"));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var profile = await client.GetFromJsonAsync<AccountProfileResponse>("/api/account/me");
+        Assert.NotNull(profile);
+        Assert.Equal("producer", profile.OrganizationRole);
+
+        var offer = await client.PostAsJsonAsync(
+            "/api/offers",
+            new CreateOfferRequest("Demo product", 25m, 5m, "kg", null));
+        Assert.Equal(HttpStatusCode.Created, offer.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await client.DeleteAsync("/api/dev/session")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            (await client.GetAsync("/api/account/me")).StatusCode);
+    }
+
+    [Fact]
     public async Task Direct_trade_workflow_persists_records_and_enforces_roles_and_quantity_limits()
     {
         using var factory = new GateApiFactory();
@@ -55,6 +86,9 @@ public sealed class ApiWorkflowTests
 
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/offers")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await client.PostAsJsonAsync("/api/dev/session", new DevelopmentSessionRequest("producer"))).StatusCode);
 
         var anonymousOfferResponse = await client.PostAsJsonAsync(
             "/api/offers",
@@ -337,6 +371,7 @@ public sealed class ApiWorkflowTests
         client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/")).StatusCode);
         var homepage = await client.GetStringAsync("/");
+        Assert.Contains("href=\"/workspace.html\"", homepage);
         Assert.Contains("Les bonnes rencontres.", homepage);
         Assert.Contains("id=\"unit-filter\"", homepage);
         Assert.Contains("Producteur", homepage);
@@ -345,6 +380,12 @@ public sealed class ApiWorkflowTests
         Assert.Contains("Partenaire logistique", homepage);
         Assert.Contains("Partenaire de paiement", homepage);
         Assert.Contains("THE GATE ne reçoit ni ne déplace les fonds.", homepage);
+        var workspace = await client.GetStringAsync("/workspace.html");
+        Assert.Contains("data-role=\"producer\"", workspace);
+        Assert.Contains("data-role=\"buyer\"", workspace);
+        Assert.Contains("data-role=\"inspector\"", workspace);
+        Assert.Contains("data-role=\"logistics_provider\"", workspace);
+        Assert.Contains("data-role=\"payment_partner\"", workspace);
     }
 
     [Fact]
@@ -503,4 +544,33 @@ internal sealed class GateApiFactory : WebApplicationFactory<Program>
             File.Delete(_databasePath);
         }
     }
+
+    internal sealed class DevelopmentApiFactory : WebApplicationFactory<Program>
+    {
+        private readonly string _databasePath = Path.Combine(
+            Path.GetTempPath(),
+            $"the-gate-development-{Guid.NewGuid():N}.db");
+
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            builder.UseEnvironment("Development");
+            builder.ConfigureAppConfiguration((_, configuration) =>
+                configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["DatabaseProvider"] = "Sqlite",
+                    ["ConnectionStrings:TradeDatabase"] = $"Data Source={_databasePath}"
+                }));
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing && File.Exists(_databasePath))
+            {
+                File.Delete(_databasePath);
+            }
+        }
+    }
+
+    internal sealed record DevelopmentModeResponse(bool Enabled);
 }

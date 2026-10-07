@@ -25,6 +25,10 @@ public interface ITradeRepository
 
     Task<DirectTradeRecord?> GetTradeRecordAsync(Guid tradeRecordId, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<DirectTradeRecord>> GetTradeRecordsForOrganizationAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken);
+
     Task<IndependentVerificationReport> AddVerificationAsync(
         Guid tradeRecordId,
         Guid verifierOrganizationId,

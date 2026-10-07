@@ -142,6 +142,22 @@ public sealed class EfTradeRepository(TradeDbContext dbContext) : ITradeReposito
         return row is null ? null : ToDomain(row);
     }
 
+    public async Task<IReadOnlyList<DirectTradeRecord>> GetTradeRecordsForOrganizationAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken)
+    {
+        var rows = await dbContext.DirectTradeRecords
+            .AsNoTracking()
+            .Where(row =>
+                row.ProducerOrganizationId == organizationId ||
+                row.BuyerOrganizationId == organizationId)
+            .OrderByDescending(row => row.RecordedAtUtc)
+            .Take(100)
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(ToDomain).ToArray();
+    }
+
     public async Task<IndependentVerificationReport> AddVerificationAsync(
         Guid tradeRecordId,
         Guid verifierOrganizationId,

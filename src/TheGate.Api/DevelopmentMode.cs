@@ -25,6 +25,9 @@ public static class DevelopmentSessionEndpoints
     {
         if (endpoints.ServiceProvider.GetRequiredService<IWebHostEnvironment>().IsDevelopment())
         {
+            endpoints.MapGet("/api/dev/session", () => Results.Ok(new { enabled = true }))
+                .AllowAnonymous();
+
             endpoints.MapPost("/api/dev/session", async (
                     DevelopmentSessionRequest request,
                     HttpContext context) =>
@@ -108,7 +111,7 @@ public static class DevelopmentDatabase
                 500m,
                 50m,
                 "kg",
-                "https://example.org/contact/producteur"),
+                null),
             CreateDemoOffer(
                 "10000000-0000-4000-8000-000000000001",
                 "Cacao — fèves fermentées déclarées",
