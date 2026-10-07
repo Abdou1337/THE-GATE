@@ -27,6 +27,12 @@ builder.Services
             throw new InvalidOperationException("Authentication:Jwt:Issuer and Authentication:Jwt:Audience must be configured.");
         }
 
+        if (!Uri.TryCreate(issuer, UriKind.Absolute, out var issuerUri) ||
+            !string.Equals(issuerUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Authentication:Jwt:Issuer must be an HTTPS issuer URI.");
+        }
+
         options.Authority = authority;
         options.Audience = audience;
         options.RequireHttpsMetadata = true;

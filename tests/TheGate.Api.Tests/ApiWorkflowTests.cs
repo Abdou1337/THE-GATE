@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,22 @@ public sealed class DatabaseIntegrationCollection
 [Collection("Database integration")]
 public sealed class ApiWorkflowTests
 {
+    [Fact]
+    public void Jwt_bearer_validation_uses_the_configured_https_issuer_and_audience()
+    {
+        using var factory = new GateApiFactory();
+        using var scope = factory.Services.CreateScope();
+        var options = scope.ServiceProvider
+            .GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme);
+
+        Assert.Equal("https://identity.example.test", options.Authority);
+        Assert.Equal("https://identity.example.test/", options.TokenValidationParameters.ValidIssuer);
+        Assert.Equal("the-gate-api", options.Audience);
+        Assert.True(options.RequireHttpsMetadata);
+        Assert.Equal("organization_role", options.TokenValidationParameters.RoleClaimType);
+    }
+
     [Fact]
     public async Task Direct_trade_workflow_persists_records_and_enforces_roles_and_quantity_limits()
     {
@@ -261,7 +278,7 @@ internal sealed class GateApiFactory : WebApplicationFactory<Program>
             {
                 ["ConnectionStrings:TradeDatabase"] = "Host=localhost;Database=tests;Username=tests",
                 ["Authentication:Jwt:Authority"] = "https://identity.example.test",
-                ["Authentication:Jwt:Issuer"] = "the-gate-tests",
+                ["Authentication:Jwt:Issuer"] = "https://identity.example.test/",
                 ["Authentication:Jwt:Audience"] = "the-gate-api"
             }));
         builder.ConfigureTestServices(services =>

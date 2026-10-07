@@ -43,6 +43,11 @@ public sealed class DirectTradeRecord
             throw new ArgumentException("Record time must be UTC.", nameof(recordedAtUtc));
         }
 
+        if (!Enum.IsDefined(status))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
         if ((status == DirectTradeRecordStatus.Confirmed) != (producerConfirmedAtUtc is not null) ||
             (producerConfirmedAtUtc is not null && producerConfirmedAtUtc.Value.Offset != TimeSpan.Zero))
         {
