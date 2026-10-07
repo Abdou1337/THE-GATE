@@ -71,8 +71,12 @@ provider integrations.
 
 The platform records parties' declarations; it does not become a party to their
 commercial contract or independently accredit inspectors. The client at `/`
-currently provides public discovery only; authenticated task management is
-available through the API and still needs a production identity-provider UI.
+provides responsive public offer discovery, search by product and unit, and
+transparent role-specific workflow guidance for producers, buyers, inspectors,
+logistics providers, and payment partners. It does not yet provide authenticated
+task management screens; those operations remain available through the API and a
+production identity-provider UI must be selected and integrated before those
+private workflows can be exposed in the browser.
 
 ## Configuration and database
 

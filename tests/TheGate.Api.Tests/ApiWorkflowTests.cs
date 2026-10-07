@@ -336,7 +336,15 @@ public sealed class ApiWorkflowTests
 
         client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/")).StatusCode);
-        Assert.Contains("Découvrez des offres africaines", await client.GetStringAsync("/"));
+        var homepage = await client.GetStringAsync("/");
+        Assert.Contains("Les bonnes rencontres.", homepage);
+        Assert.Contains("id=\"unit-filter\"", homepage);
+        Assert.Contains("Producteur", homepage);
+        Assert.Contains("Acheteur", homepage);
+        Assert.Contains("Inspecteur indépendant", homepage);
+        Assert.Contains("Partenaire logistique", homepage);
+        Assert.Contains("Partenaire de paiement", homepage);
+        Assert.Contains("THE GATE ne reçoit ni ne déplace les fonds.", homepage);
     }
 
     [Fact]
