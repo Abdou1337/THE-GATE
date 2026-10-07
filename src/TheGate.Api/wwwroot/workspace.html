@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123f35">
+  <title>Mon espace — THE GATE</title>
+  <style>
+    :root { font-family: Inter, "Segoe UI", system-ui, sans-serif; color: #17372f; background: #f4f6f1; --green: #123f35; --line: #dfe6dc; --muted: #6b7c72; --paper: #fffefa; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input, select, textarea { font: inherit; }
+    .topbar { height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 0 max(22px, calc((100% - 1120px) / 2)); border-bottom: 1px solid var(--line); background: var(--paper); }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--green); font-size: .9rem; font-weight: 850; letter-spacing: .1em; text-decoration: none; }
+    .brand-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px 10px 10px 3px; color: #d7ed86; background: var(--green); }
+    .brand-mark svg { width: 18px; }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .demo-badge { padding: 6px 9px; border: 1px solid #e8d9a2; border-radius: 999px; color: #77611f; background: #fff8df; font-size: .68rem; font-weight: 800; }
+    .link { color: var(--green); font-size: .8rem; font-weight: 700; text-decoration: none; }
+    main { width: min(1120px, calc(100% - 40px)); margin: 38px auto 70px; }
+    .eyebrow { color: #65806e; font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 9px 0 8px; font-family: Georgia, serif; font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 500; letter-spacing: -.05em; }
+    .intro { margin: 0; color: var(--muted); font-size: .94rem; line-height: 1.65; }
+    .notice { margin: 24px 0; padding: 14px 16px; border: 1px solid #e8dcae; border-radius: 12px; color: #665727; background: #fff9e6; font-size: .82rem; line-height: 1.55; }
+    .panel { margin-top: 21px; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: 0 12px 35px #1b3a2707; }
+    .panel h2 { margin: 0 0 7px; font-size: 1.06rem; }
+    .panel > p { margin: 0 0 17px; color: var(--muted); font-size: .82rem; line-height: 1.55; }
+    .personas { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; margin-top: 24px; }
+    .persona { display: flex; flex-direction: column; align-items: flex-start; min-height: 155px; padding: 17px; border: 1px solid var(--line); border-radius: 13px; color: inherit; background: #fff; text-align: left; cursor: pointer; transition: transform .18s ease, border-color .18s ease; }
+    .persona:hover { transform: translateY(-2px); border-color: #8bab91; }
+    .persona-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: #427354; background: #eaf1e6; font-weight: 800; }
+    .persona strong { margin-top: 13px; font-size: .9rem; }
+    .persona small { margin-top: 5px; color: var(--muted); font-size: .73rem; line-height: 1.45; }
+    .workspace-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .workspace-head h1 { font-size: clamp(2rem, 4vw, 2.75rem); }
+    .org { color: var(--muted); font-size: .78rem; }
+    .logout { padding: 9px 13px; border: 1px solid var(--line); border-radius: 9px; color: var(--green); background: white; font-weight: 700; cursor: pointer; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 18px; margin-top: 20px; align-items: start; }
+    .stack { display: grid; gap: 17px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+    .field { display: grid; gap: 6px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    label { color: #50645a; font-size: .73rem; font-weight: 700; }
+    input, select, textarea { width: 100%; min-height: 42px; padding: 10px 11px; border: 1px solid #dce4da; border-radius: 9px; outline: none; color: #17372f; background: white; font-size: .82rem; }
+    textarea { min-height: 75px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { border-color: #6d9a78; box-shadow: 0 0 0 3px #e1eddf; }
+    .primary { min-height: 42px; padding: 0 15px; border: 0; border-radius: 9px; color: #fff; background: var(--green); font-size: .81rem; font-weight: 750; cursor: pointer; }
+    .primary:hover { background: #205d4b; }
+    .form-grid .primary { justify-self: start; }
+    .form-message { min-height: 18px; margin: 10px 0 0; color: #617268; font-size: .77rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .form-message.error { color: #a23e35; }
+    .item-list { display: grid; gap: 9px; }
+    .item { padding: 13px; border: 1px solid #e6eae2; border-radius: 10px; background: #fff; }
+    .item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .item strong { font-size: .84rem; overflow-wrap: anywhere; }
+    .item p { margin: 5px 0 0; color: var(--muted); font-size: .75rem; line-height: 1.5; overflow-wrap: anywhere; }
+    .item code { display: block; margin-top: 7px; color: #77857c; font-size: .65rem; overflow-wrap: anywhere; }
+    .item button { margin-top: 10px; }
+    .status { padding: 4px 7px; border-radius: 99px; color: #4e7054; background: #eaf2e6; font-size: .65rem; font-weight: 800; white-space: nowrap; }
+    .empty { padding: 20px 12px; border: 1px dashed #d9e2d7; border-radius: 10px; color: var(--muted); font-size: .78rem; line-height: 1.5; text-align: center; }
+    .hidden { display: none !important; }
+    footer { margin-top: 35px; color: #819087; font-size: .72rem; line-height: 1.6; }
+    :focus-visible { outline: 3px solid #86a96e; outline-offset: 3px; }
+    @media (max-width: 760px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) { .topbar { height: 62px; padding: 0 16px; } main { width: calc(100% - 30px); margin-top: 25px; } .panel { padding: 17px; } .form-grid { grid-template-columns: 1fr; } .field.full { grid-column: auto; } .workspace-head { align-items: flex-start; } .workspace-head h1 { font-size: 1.8rem; } .org { max-width: 210px; overflow-wrap: anywhere; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 19V9.5L12 4l7 5.5V19M9 19v-6h6v6M3 20h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>THE GATE</a>
+    <div class="top-actions"><span class="demo-badge hidden" id="demo-badge">DÉMONSTRATION LOCALE</span><a class="link" href="/">Retour au catalogue</a></div>
+  </header>
+  <main>
+    <section id="login-view">
+      <span class="eyebrow">Espace de travail</span>
+      <h1>Quel est votre rôle ?</h1>
+      <p class="intro">Choisissez un profil local de démonstration pour parcourir les workflows MVP.</p>
+      <div class="notice" id="environment-notice">Le mode démonstration crée une session locale simulée. Il ne crée pas de compte réel et ne doit jamais être utilisé pour des opérations de production.</div>
+      <div class="personas" id="personas">
+        <button class="persona" data-role="producer"><span class="persona-icon">P</span><strong>Producteur</strong><small>Publier une offre et confirmer les accords en attente.</small></button>
+        <button class="persona" data-role="buyer"><span class="persona-icon">A</span><strong>Acheteur</strong><small>Explorer les offres et enregistrer un accord direct.</small></button>
+        <button class="persona" data-role="inspector"><span class="persona-icon">I</span><strong>Inspecteur</strong><small>Déclarer une mesure indépendante et sa référence de preuve.</small></button>
+        <button class="persona" data-role="logistics_provider"><span class="persona-icon">L</span><strong>Partenaire logistique</strong><small>Créer un parcours et enregistrer des jalons ordonnés.</small></button>
+        <button class="persona" data-role="payment_partner"><span class="persona-icon">$</span><strong>Partenaire de paiement</strong><small>Déclarer le statut de règlement d’une obligation identifiée.</small></button>
+      </div>
+      <p class="form-message" id="login-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="workspace-view" class="hidden">
+      <div class="workspace-head">
+        <div><span class="eyebrow">Votre espace THE GATE</span><h1 id="welcome">Bonjour.</h1><p class="org" id="org-id"></p></div>
+        <button class="logout" id="logout">Changer de profil</button>
+      </div>
+      <div class="notice">Mode local de démonstration. Les déclarations et références saisies ici ne sont pas certifiées; les paiements réels et intégrations externes ne sont pas exécutés.</div>
+      <div class="dashboard-grid">
+        <div class="stack">
+          <section class="panel hidden" data-for="producer">
+            <h2>Créer une offre</h2><p>Une publication par saisie. Les quantités disponibles diminuent uniquement après confirmation du producteur.</p>
+            <form class="form-grid" data-action="create-offer">
+              <div class="field full"><label for="offer-product">Produit et qualité déclarée</label><input id="offer-product" name="productDescription" maxlength="300" required placeholder="Ex. Café arabica — récolte 2026"></div>
+              <div class="field"><label for="offer-quantity">Quantité déclarée</label><input id="offer-quantity" name="declaredQuantity" type="number" min="0.001" step="0.001" required></div>
+              <div class="field"><label for="offer-unit">Unité</label><select id="offer-unit" name="unitCode"><option>kg</option><option>tonne</option><option>litre</option><option>unité</option></select></div>
+              <div class="field"><label for="offer-minimum">Minimum direct</label><input id="offer-minimum" name="minimumDirectTradeQuantity" type="number" min="0.001" step="0.001" required></div>
+              <div class="field"><label for="offer-contact">Contact externe HTTPS (facultatif)</label><input id="offer-contact" name="externalContactUri" type="url" placeholder="https://…"></div>
+              <button class="primary" type="submit">Publier l’offre</button>
+              <p class="form-message full" role="status"></p>
+            </form>
+          </section>
+          <section class="panel hidden" data-for="buyer">
+            <h2>Explorer les offres</h2><p>Contactez le producteur en dehors de THE GATE puis consignez votre accord déclaré. Cela ne réserve pas le stock.</p>
+            <div class="item-list" id="offer-list"></div>
+          </section>
+          <section class="panel hidden" data-for="inspector">
+            <h2>Enregistrer une vérification indépendante</h2><p>La mesure constatée reste distincte de la quantité déclarée.</p>
+            <form class="form-grid" data-action="verification">
+              <div class="field full"><label for="verify-trade">Identifiant de transaction</label><input id="verify-trade" name="tradeRecordId" required></div>
+              <div class="field"><label for="verify-quantity">Quantité mesurée</label><input id="verify-quantity" name="measuredQuantity" type="number" min="0.001" step="0.001" required></div>
+              <div class="field"><label for="verify-unit">Unité</label><input id="verify-unit" name="unitCode" value="kg" required></div>
+              <div class="field full"><label for="verify-evidence">Référence de preuve</label><input id="verify-evidence" name="evidenceReference" maxlength="2048" required></div>
+              <button class="primary" type="submit">Enregistrer la mesure</button><p class="form-message full" role="status"></p>
+            </form>
+          </section>
+          <section class="panel hidden" data-for="producer buyer">
+            <h2>Mes transactions</h2><p>Vos transactions directes et leur état courant.</p><div class="item-list" id="trade-list"></div>
+          </section>
+          <section class="panel hidden" data-for="producer buyer">
+            <h2>Conformité déclarée</h2><p>Enregistrez les exigences identifiées par les parties. Cela ne constitue pas un avis réglementaire.</p>
+            <form class="form-grid" data-action="create-compliance">
+              <div class="field full"><label for="compliance-trade">Identifiant de transaction</label><input id="compliance-trade" name="tradeRecordId" required></div>
+              <div class="field"><label for="compliance-owner">Organisation responsable (UUID)</label><input id="compliance-owner" name="responsibleOrganizationId" required></div>
+              <div class="field"><label for="compliance-type">Document / exigence</label><input id="compliance-type" name="documentType" required></div>
+              <div class="field"><label for="compliance-issuer">Émetteur déclaré</label><input id="compliance-issuer" name="issuer" required></div>
+              <div class="field"><label for="compliance-source">Source de l’exigence</label><input id="compliance-source" name="requirementSource" required></div>
+              <button class="primary" type="submit">Ajouter la tâche</button><p class="form-message full" role="status"></p>
+            </form>
+            <form class="form-grid" data-action="compliance-evidence" style="margin-top:17px">
+              <div class="field"><label>Identifiant de tâche</label><input name="taskId" required></div>
+              <div class="field"><label>Référence de preuve</label><input name="evidenceReference" required></div>
+              <button class="primary" type="submit">Joindre la référence</button><p class="form-message full" role="status"></p>
+            </form>
+            <form class="form-grid" data-action="compliance-attest" style="margin-top:10px">
+              <div class="field"><label>Identifiant de tâche</label><input name="taskId" required></div>
+              <button class="primary" type="submit">Attester ma responsabilité</button><p class="form-message full" role="status"></p>
+            </form>
+          </section>
+          <section class="panel hidden" data-for="producer buyer">
+            <h2>Obligation de paiement déclarée</h2><p>THE GATE ne traite, ne reçoit ni ne déplace les fonds.</p>
+            <form class="form-grid" data-action="create-payment">
+              <div class="field full"><label>Identifiant de transaction</label><input name="tradeRecordId" required></div>
+              <div class="field"><label>Organisation payeuse (UUID)</label><input name="payerOrganizationId" required></div>
+              <div class="field"><label>Organisation bénéficiaire (UUID)</label><input name="beneficiaryOrganizationId" required></div>
+              <div class="field"><label>Partenaire de paiement (UUID)</label><input name="paymentPartnerOrganizationId" required></div>
+              <div class="field"><label>Montant déclaré</label><input name="amount" type="number" min="0.01" step="0.01" required></div>
+              <div class="field"><label>Devise (code)</label><input name="currencyCode" maxlength="3" required placeholder="XAF"></div>
+              <div class="field"><label>Prestataire déclaré</label><input name="providerName" required></div>
+              <div class="field"><label>Référence externe</label><input name="providerReference" required></div>
+              <button class="primary" type="submit">Consigner l’obligation</button><p class="form-message full" role="status"></p>
+            </form>
+          </section>
+          <section class="panel hidden" data-for="logistics_provider">
+            <h2>Créer un parcours logistique</h2><p>Les jalons sont des déclarations du prestataire, pas un suivi transporteur automatique.</p>
+            <form class="form-grid" data-action="create-shipment">
+              <div class="field"><label>Identifiant de transaction</label><input name="tradeRecordId" required></div>
+              <div class="field"><label>Référence prestataire</label><input name="shipmentReference" required></div>
+              <button class="primary" type="submit">Créer le parcours</button><p class="form-message full" role="status"></p>
+            </form>
+            <form class="form-grid" data-action="logistics-milestone" style="margin-top:17px">
+              <div class="field"><label>Identifiant de transaction</label><input name="tradeRecordId" required></div>
+              <div class="field"><label>Identifiant d’expédition</label><input name="shipmentId" required></div>
+              <div class="field"><label>Prochain jalon</label><select name="type"><option value="1">Devis</option><option value="2">Réservation</option><option value="3">Collecte</option><option value="4">Entrepôt</option><option value="5">Mise en conteneur</option><option value="6">Dédouanement export</option><option value="7">Expédition</option><option value="8">Suivi</option><option value="9">Arrivée</option><option value="10">Livraison</option></select></div>
+              <div class="field"><label>Référence de preuve</label><input name="evidenceReference" required></div>
+              <button class="primary" type="submit">Enregistrer le jalon</button><p class="form-message full" role="status"></p>
+            </form>
+          </section>
+          <section class="panel hidden" data-for="payment_partner">
+            <h2>Déclarer un règlement</h2><p>Ce statut reflète la déclaration du partenaire; il ne prouve pas une transaction bancaire.</p>
+            <form class="form-grid" data-action="payment-report">
+              <div class="field full"><label>Identifiant d’obligation de paiement</label><input name="obligationId" required></div>
+              <button class="primary" type="submit">Déclarer le règlement effectué</button><p class="form-message full" role="status"></p>
+            </form>
+          </section>
+          <section class="panel hidden" data-for="producer buyer">
+            <h2>Confirmer la clôture</h2><p>Chaque partie confirme séparément, après atteinte des jalons enregistrés.</p>
+            <form class="form-grid" data-action="close-trade"><div class="field full"><label>Identifiant de transaction</label><input name="tradeRecordId" required></div><button class="primary" type="submit">Confirmer la clôture</button><p class="form-message full" role="status"></p></form>
+          </section>
+        </div>
+        <aside class="stack">
+          <section class="panel">
+            <h2>Activité du compte</h2><p>Les identifiants vous permettent de partager les références de workflows entre participants.</p>
+            <div class="item-list" id="activity-list"><div class="empty">Chargement de vos transactions…</div></div>
+          </section>
+          <section class="panel">
+            <h2>Mes offres publiées</h2><p>Les disponibilités restent des déclarations de leurs auteurs.</p>
+            <div class="item-list" id="my-offers"><div class="empty">Disponible dans le profil producteur.</div></div>
+          </section>
+          <section class="panel">
+            <h2>Responsabilités</h2><p>THE GATE structure les workflows entre les parties. Les contrats, les services réglementés, l’inspection, le transport et le paiement sont assurés par les acteurs concernés.</p>
+          </section>
+        </aside>
+      </div>
+    </section>
+    <footer>Mode développement seulement. Les identités locales sont fictives et supprimées de l’usage de production. La plateforme n’est ni dépositaire de fonds, ni organisme de certification, ni partie automatique au contrat commercial.</footer>
+  </main>
+  <script>
+    const loginView = document.querySelector("#login-view");
+    const workspaceView = document.querySelector("#workspace-view");
+    const loginMessage = document.querySelector("#login-message");
+    const activityList = document.querySelector("#activity-list");
+    const offerList = document.querySelector("#offer-list");
+    const myOffers = document.querySelector("#my-offers");
+    let profile;
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        credentials: "same-origin",
+        ...options,
+        headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...options.headers }
+      });
+      if (response.status === 204) return null;
+      const contentType = response.headers.get("content-type") || "";
+      const body = contentType.includes("application/json") ? await response.json() : await response.text();
+      if (!response.ok) {
+        const message = body && typeof body === "object" ? body.error || body.title : body;
+        throw new Error(message || `Erreur HTTP ${response.status}`);
+      }
+      return body;
+    }
+
+    function showEmpty(container, message) {
+      container.replaceChildren();
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = message;
+      container.append(empty);
+    }
+
+    function showLogin(message = "") {
+      profile = undefined;
+      workspaceView.classList.add("hidden");
+      loginView.classList.remove("hidden");
+      document.querySelector("#demo-badge").classList.add("hidden");
+      if (message) loginMessage.textContent = message;
+    }
+
+    function drawActivity(records) {
+      if (!records.length) return showEmpty(activityList, "Aucune transaction pour ce profil. Une transaction apparaîtra après l’enregistrement d’un accord direct.");
+      activityList.replaceChildren();
+      for (const record of records) {
+        const item = document.createElement("article");
+        item.className = "item";
+        const top = document.createElement("div");
+        top.className = "item-top";
+        const title = document.createElement("strong");
+        title.textContent = `${record.agreedQuantity} ${record.unitCode} · ${record.status}`;
+        const badge = document.createElement("span");
+        badge.className = "status";
+        badge.textContent = record.status === "AwaitingProducerConfirmation" ? "En attente" : record.status;
+        top.append(title, badge);
+        const parties = document.createElement("p");
+        parties.textContent = `Producteur ${record.producerOrganizationId} · Acheteur ${record.buyerOrganizationId}`;
+        const id = document.createElement("code");
+        id.textContent = `Transaction : ${record.id}`;
+        item.append(top, parties, id);
+        activityList.append(item);
+      }
+    }
+
+    function drawOffers(container, offers, actionable) {
+      if (!offers.length) return showEmpty(container, "Aucune offre disponible pour le moment.");
+      container.replaceChildren();
+      for (const offer of offers) {
+        const item = document.createElement("article");
+        item.className = "item";
+        const top = document.createElement("div");
+        top.className = "item-top";
+        const title = document.createElement("strong");
+        title.textContent = offer.productDescription;
+        const badge = document.createElement("span");
+        badge.className = "status";
+        badge.textContent = `${offer.remainingQuantity} ${offer.unitCode} déclarés`;
+        top.append(title, badge);
+        const detail = document.createElement("p");
+        detail.textContent = `Minimum direct : ${offer.minimumDirectTradeQuantity} ${offer.unitCode}`;
+        item.append(top, detail);
+        const id = document.createElement("code");
+        id.textContent = `Offre : ${offer.id}`;
+        item.append(id);
+        if (actionable && offer.externalContactUri) {
+          try {
+            const contactUri = new URL(offer.externalContactUri, window.location.origin);
+            if (contactUri.protocol === "https:") {
+              const contact = document.createElement("a");
+              contact.className = "link";
+              contact.href = contactUri.href;
+              contact.target = "_blank";
+              contact.rel = "noopener noreferrer";
+              contact.textContent = "Contacter le producteur";
+              item.append(contact);
+            }
+          } catch { }
+        }
+        if (actionable) {
+          const form = document.createElement("form");
+          form.className = "form-grid";
+          form.style.marginTop = "12px";
+          const quantityField = document.createElement("div");
+          quantityField.className = "field";
+          const quantityLabel = document.createElement("label");
+          quantityLabel.textContent = "Quantité convenue";
+          const quantityInput = document.createElement("input");
+          quantityInput.type = "number";
+          quantityInput.min = String(offer.minimumDirectTradeQuantity);
+          quantityInput.max = String(offer.remainingQuantity);
+          quantityInput.step = "0.001";
+          quantityInput.required = true;
+          quantityField.append(quantityLabel, quantityInput);
+          const submit = document.createElement("button");
+          submit.className = "primary";
+          submit.type = "submit";
+          submit.textContent = "Enregistrer mon intention";
+          const formMessage = document.createElement("p");
+          formMessage.className = "form-message full";
+          formMessage.setAttribute("role", "status");
+          form.append(quantityField, submit, formMessage);
+          form.addEventListener("submit", async event => {
+            event.preventDefault();
+            const message = formMessage;
+            try {
+              const agreedQuantity = Number(quantityInput.value);
+              const result = await api(`/api/offers/${offer.id}/trades`, {
+                method: "POST",
+                body: JSON.stringify({ agreedQuantity, unitCode: offer.unitCode })
+              });
+              message.textContent = `Intention enregistrée : ${result.id}. Le producteur doit confirmer.`;
+              await refreshData();
+            } catch (error) { message.textContent = error.message; message.classList.add("error"); }
+          });
+          item.append(form);
+        }
+        container.append(item);
+      }
+    }
+
+    async function refreshData() {
+      if (profile.role !== "producer" && profile.role !== "buyer") {
+        showEmpty(activityList, "Les transactions sont partagées directement par les parties. Saisissez l’identifiant reçu dans le formulaire du workflow.");
+        showEmpty(offerList, "Consultez les identifiants partagés par les parties.");
+        showEmpty(myOffers, "Disponible dans le profil producteur.");
+        return;
+      }
+      const records = await api("/api/trades/mine");
+      drawActivity(records);
+      if (profile.role === "producer") {
+        const offers = await api("/api/offers");
+        const owned = offers.filter(offer => offer.producerOrganizationId === profile.organizationId);
+        drawOffers(myOffers, owned, false);
+        drawOffers(offerList, owned, false);
+      } else if (profile.role === "buyer") {
+        drawOffers(offerList, await api("/api/offers"), true);
+        showEmpty(myOffers, "Disponible dans le profil producteur.");
+      } else {
+        showEmpty(offerList, "Consultez les identifiants partagés par les parties.");
+        showEmpty(myOffers, "Disponible dans le profil producteur.");
+      }
+      document.querySelectorAll('[data-action="confirm-trade"]').forEach(node => node.remove());
+      if (profile.role === "producer") {
+        for (const record of records.filter(item => item.status === "AwaitingProducerConfirmation")) {
+          const item = document.createElement("article");
+          item.className = "item";
+          const title = document.createElement("strong");
+          title.textContent = `Accord en attente · ${record.agreedQuantity} ${record.unitCode}`;
+          const id = document.createElement("code");
+          id.textContent = record.id;
+          const button = document.createElement("button");
+          button.className = "primary";
+          button.type = "button";
+          button.textContent = "Confirmer et allouer";
+          button.dataset.action = "confirm-trade";
+          button.addEventListener("click", async () => {
+            try {
+              await api(`/api/trades/${record.id}/confirm`, { method: "POST" });
+              await refreshData();
+            } catch (error) { window.alert(error.message); }
+          });
+          item.append(title, id, button);
+          activityList.prepend(item);
+        }
+      }
+    }
+
+    async function startSession(role) {
+      loginMessage.textContent = "Ouverture de l’espace de démonstration…";
+      try {
+        profile = await api("/api/dev/session", { method: "POST", body: JSON.stringify({ role }) });
+        loginView.classList.add("hidden");
+        workspaceView.classList.remove("hidden");
+        document.querySelector("#demo-badge").classList.remove("hidden");
+        document.querySelector("#welcome").textContent = `Bonjour, ${profile.displayName}.`;
+        document.querySelector("#org-id").textContent = `Organisation de démonstration : ${profile.organizationId}`;
+        document.querySelectorAll("[data-for]").forEach(section => {
+          section.classList.toggle("hidden", !section.dataset.for.split(" ").includes(role));
+        });
+        await refreshData();
+      } catch (error) {
+        loginMessage.textContent = error.message;
+        loginMessage.classList.add("error");
+      }
+    }
+
+    document.querySelector("#personas").addEventListener("click", event => {
+      const button = event.target.closest("[data-role]");
+      if (button) startSession(button.dataset.role);
+    });
+    document.querySelector("#logout").addEventListener("click", async () => {
+      await api("/api/dev/session", { method: "DELETE" }).catch(() => {});
+      showLogin("Session locale fermée. Choisissez un profil.");
+    });
+
+    document.querySelectorAll("form[data-action]").forEach(form => {
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const fields = Object.fromEntries(new FormData(form).entries());
+        const message = form.querySelector(".form-message");
+        message.classList.remove("error");
+        message.textContent = "Enregistrement…";
+        const tradeId = fields.tradeRecordId;
+        const json = value => JSON.stringify(value);
+        try {
+          let result;
+          switch (form.dataset.action) {
+            case "create-offer":
+              result = await api("/api/offers", { method: "POST", body: json({
+                productDescription: fields.productDescription,
+                declaredQuantity: Number(fields.declaredQuantity),
+                minimumDirectTradeQuantity: Number(fields.minimumDirectTradeQuantity),
+                unitCode: fields.unitCode,
+                externalContactUri: fields.externalContactUri || null
+              }) });
+              break;
+            case "verification":
+              result = await api(`/api/trades/${tradeId}/verifications`, { method: "POST", body: json({
+                measuredQuantity: Number(fields.measuredQuantity), unitCode: fields.unitCode, evidenceReference: fields.evidenceReference
+              }) });
+              break;
+            case "create-compliance":
+              result = await api(`/api/trades/${tradeId}/compliance-tasks`, { method: "POST", body: json({
+                responsibleOrganizationId: fields.responsibleOrganizationId, documentType: fields.documentType,
+                issuer: fields.issuer, requirementSource: fields.requirementSource, dueAtUtc: null
+              }) });
+              break;
+            case "compliance-evidence":
+              result = await api(`/api/compliance-tasks/${fields.taskId}/evidence`, { method: "POST", body: json({ evidenceReference: fields.evidenceReference }) });
+              break;
+            case "compliance-attest":
+              result = await api(`/api/compliance-tasks/${fields.taskId}/attest`, { method: "POST" });
+              break;
+            case "create-payment":
+              result = await api(`/api/trades/${tradeId}/payment-obligations`, { method: "POST", body: json({
+                payerOrganizationId: fields.payerOrganizationId,
+                beneficiaryOrganizationId: fields.beneficiaryOrganizationId,
+                paymentPartnerOrganizationId: fields.paymentPartnerOrganizationId,
+                amount: Number(fields.amount), currencyCode: fields.currencyCode,
+                providerName: fields.providerName, providerReference: fields.providerReference
+              }) });
+              break;
+            case "create-shipment":
+              result = await api(`/api/trades/${tradeId}/shipments`, { method: "POST", body: json({ shipmentReference: fields.shipmentReference }) });
+              break;
+            case "logistics-milestone":
+              result = await api(`/api/trades/${tradeId}/shipments/${fields.shipmentId}/milestones`, { method: "POST", body: json({
+                type: Number(fields.type), evidenceReference: fields.evidenceReference
+              }) });
+              break;
+            case "payment-report":
+              result = await api(`/api/payment-obligations/${fields.obligationId}/partner-report`, { method: "POST" });
+              break;
+            case "close-trade":
+              result = await api(`/api/trades/${tradeId}/closure-confirmations`, { method: "POST" });
+              break;
+          }
+          message.textContent = result ? JSON.stringify(result, null, 2) : "Mise à jour enregistrée.";
+          await refreshData();
+        } catch (error) {
+          message.textContent = error.message;
+          message.classList.add("error");
+        }
+      });
+    });
+
+    async function initialize() {
+      try {
+        const mode = await api("/api/dev/session", { method: "GET" });
+        if (!mode.enabled) throw new Error("Le profil local n’est pas activé.");
+      } catch {
+        document.querySelector("#environment-notice").textContent =
+          "L’authentification locale de démonstration n’est disponible qu’en environnement Development. En production, un fournisseur OIDC doit être configuré avant d’ouvrir un espace authentifié.";
+        document.querySelector("#personas").classList.add("hidden");
+        loginMessage.textContent = "Mode de démonstration indisponible sur cette instance.";
+        return;
+      }
+      try {
+        profile = await api("/api/account/me");
+        if (profile.organizationRole) {
+          loginView.classList.add("hidden");
+          workspaceView.classList.remove("hidden");
+          document.querySelector("#demo-badge").classList.remove("hidden");
+          document.querySelector("#welcome").textContent = `Bonjour, ${profile.displayName || "partenaire"}.`;
+          document.querySelector("#org-id").textContent = `Organisation : ${profile.organizationId}`;
+          document.querySelectorAll("[data-for]").forEach(section => {
+            section.classList.toggle("hidden", !section.dataset.for.split(" ").includes(profile.organizationRole));
+          });
+          await refreshData();
+        }
+      } catch { }
+    }
+    initialize();
+  </script>
+</body>
+</html>
