@@ -3,7 +3,8 @@ namespace TheGate.Domain.Trade;
 public enum DirectTradeRecordStatus
 {
     AwaitingProducerConfirmation,
-    Confirmed
+    Confirmed,
+    Closed
 }
 
 public sealed class DirectTradeRecord
@@ -17,7 +18,9 @@ public sealed class DirectTradeRecord
         Quantity agreedQuantity,
         DateTimeOffset recordedAtUtc,
         DirectTradeRecordStatus status = DirectTradeRecordStatus.AwaitingProducerConfirmation,
-        DateTimeOffset? producerConfirmedAtUtc = null)
+        DateTimeOffset? producerConfirmedAtUtc = null,
+        DateTimeOffset? producerClosedAtUtc = null,
+        DateTimeOffset? buyerClosedAtUtc = null)
     {
         if (id == Guid.Empty || offerId == Guid.Empty)
         {
@@ -48,10 +51,21 @@ public sealed class DirectTradeRecord
             throw new ArgumentOutOfRangeException(nameof(status));
         }
 
-        if ((status == DirectTradeRecordStatus.Confirmed) != (producerConfirmedAtUtc is not null) ||
+        if ((status is DirectTradeRecordStatus.Confirmed or DirectTradeRecordStatus.Closed) !=
+                (producerConfirmedAtUtc is not null) ||
             (producerConfirmedAtUtc is not null && producerConfirmedAtUtc.Value.Offset != TimeSpan.Zero))
         {
             throw new ArgumentException("Producer confirmation time must be UTC and match the record status.", nameof(producerConfirmedAtUtc));
+        }
+
+        if ((producerClosedAtUtc is not null && producerClosedAtUtc.Value.Offset != TimeSpan.Zero) ||
+            (buyerClosedAtUtc is not null && buyerClosedAtUtc.Value.Offset != TimeSpan.Zero) ||
+            (status == DirectTradeRecordStatus.Closed &&
+             (producerClosedAtUtc is null || buyerClosedAtUtc is null)) ||
+            (status != DirectTradeRecordStatus.Closed &&
+             (producerClosedAtUtc is not null || buyerClosedAtUtc is not null)))
+        {
+            throw new ArgumentException("Closed status requires both UTC closure confirmations.", nameof(status));
         }
 
         Id = id;
@@ -63,6 +77,8 @@ public sealed class DirectTradeRecord
         RecordedAtUtc = recordedAtUtc;
         Status = status;
         ProducerConfirmedAtUtc = producerConfirmedAtUtc;
+        ProducerClosedAtUtc = producerClosedAtUtc;
+        BuyerClosedAtUtc = buyerClosedAtUtc;
     }
 
     public Guid Id { get; }
@@ -83,6 +99,10 @@ public sealed class DirectTradeRecord
 
     public DateTimeOffset? ProducerConfirmedAtUtc { get; private set; }
 
+    public DateTimeOffset? ProducerClosedAtUtc { get; private set; }
+
+    public DateTimeOffset? BuyerClosedAtUtc { get; private set; }
+
     public void ConfirmByProducer(Guid producerOrganizationId, DateTimeOffset confirmedAtUtc)
     {
         if (producerOrganizationId != ProducerOrganizationId)
@@ -102,6 +122,47 @@ public sealed class DirectTradeRecord
 
         Status = DirectTradeRecordStatus.Confirmed;
         ProducerConfirmedAtUtc = confirmedAtUtc;
+    }
+
+    public void CloseByParty(Guid organizationId, DateTimeOffset closedAtUtc)
+    {
+        if (Status != DirectTradeRecordStatus.Confirmed)
+        {
+            throw new InvalidOperationException("Only a confirmed trade can be closed.");
+        }
+
+        if (closedAtUtc.Offset != TimeSpan.Zero)
+        {
+            throw new ArgumentException("Closure time must be UTC.", nameof(closedAtUtc));
+        }
+
+        if (organizationId == ProducerOrganizationId)
+        {
+            if (ProducerClosedAtUtc is not null)
+            {
+                throw new InvalidOperationException("Producer has already confirmed closure.");
+            }
+
+            ProducerClosedAtUtc = closedAtUtc;
+        }
+        else if (organizationId == BuyerOrganizationId)
+        {
+            if (BuyerClosedAtUtc is not null)
+            {
+                throw new InvalidOperationException("Buyer has already confirmed closure.");
+            }
+
+            BuyerClosedAtUtc = closedAtUtc;
+        }
+        else
+        {
+            throw new InvalidOperationException("Only the producer or buyer can confirm closure.");
+        }
+
+        if (ProducerClosedAtUtc is not null && BuyerClosedAtUtc is not null)
+        {
+            Status = DirectTradeRecordStatus.Closed;
+        }
     }
 
     public static DirectTradeRecord Register(
