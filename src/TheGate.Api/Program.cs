@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using TheGate.Api;
@@ -8,49 +9,81 @@ using TheGate.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        var jwt = builder.Configuration.GetSection("Authentication:Jwt");
-        var authority = jwt["Authority"];
-        var issuer = jwt["Issuer"];
-        var audience = jwt["Audience"];
-
-        if (!Uri.TryCreate(authority, UriKind.Absolute, out var authorityUri) ||
-            !string.Equals(authorityUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services
+        .AddAuthentication(options =>
         {
-            throw new InvalidOperationException("Authentication:Jwt:Authority must be an HTTPS OpenID Connect authority.");
-        }
-
-        if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
+            options.DefaultAuthenticateScheme = DevelopmentSessionEndpoints.Scheme;
+            options.DefaultChallengeScheme = DevelopmentSessionEndpoints.Scheme;
+            options.DefaultSignInScheme = DevelopmentSessionEndpoints.Scheme;
+        })
+        .AddCookie(DevelopmentSessionEndpoints.Scheme, options =>
         {
-            throw new InvalidOperationException("Authentication:Jwt:Issuer and Authentication:Jwt:Audience must be configured.");
-        }
-
-        if (!Uri.TryCreate(issuer, UriKind.Absolute, out var issuerUri) ||
-            !string.Equals(issuerUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            options.Cookie.Name = "the-gate-dev";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            options.SlidingExpiration = true;
+            options.Events.OnRedirectToLogin = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            };
+        });
+}
+else
+{
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            throw new InvalidOperationException("Authentication:Jwt:Issuer must be an HTTPS issuer URI.");
-        }
+            var jwt = builder.Configuration.GetSection("Authentication:Jwt");
+            var authority = jwt["Authority"];
+            var issuer = jwt["Issuer"];
+            var audience = jwt["Audience"];
 
-        options.Authority = authority;
-        options.Audience = audience;
-        options.RequireHttpsMetadata = true;
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = issuer,
-            ValidateAudience = true,
-            ValidAudience = audience,
-            ValidateIssuerSigningKey = true,
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromMinutes(1),
-            NameClaimType = JwtRegisteredClaimNames.Sub,
-            RoleClaimType = "organization_role"
-        };
-    });
+            if (!Uri.TryCreate(authority, UriKind.Absolute, out var authorityUri) ||
+                !string.Equals(authorityUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Authentication:Jwt:Authority must be an HTTPS OpenID Connect authority.");
+            }
+
+            if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
+            {
+                throw new InvalidOperationException("Authentication:Jwt:Issuer and Authentication:Jwt:Audience must be configured.");
+            }
+
+            if (!Uri.TryCreate(issuer, UriKind.Absolute, out var issuerUri) ||
+                !string.Equals(issuerUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Authentication:Jwt:Issuer must be an HTTPS issuer URI.");
+            }
+
+            options.Authority = authority;
+            options.Audience = audience;
+            options.RequireHttpsMetadata = true;
+            options.MapInboundClaims = false;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+                ValidateAudience = true,
+                ValidAudience = audience,
+                ValidateIssuerSigningKey = true,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromMinutes(1),
+                NameClaimType = JwtRegisteredClaimNames.Sub,
+                RoleClaimType = "organization_role"
+            };
+        });
+}
 
 builder.Services.AddAuthorization(options =>
 {
@@ -88,6 +121,14 @@ builder.Services.AddTradeInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
+if (!app.Environment.IsDevelopment() &&
+    string.Equals(app.Configuration["DatabaseProvider"], "Sqlite", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException("SQLite is supported only in the Development environment.");
+}
+
+await DevelopmentDatabase.InitializeAsync(app);
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -96,6 +137,7 @@ app.UseStaticFiles();
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapTradeEndpoints();
 app.MapTradeOperationsEndpoints();
+app.MapDevelopmentSessionEndpoints();
 
 app.Run();
 

@@ -20,7 +20,20 @@ public static class DependencyInjection
                 throw new InvalidOperationException("ConnectionStrings:TradeDatabase must be configured.");
             }
 
-            options.UseNpgsql(connectionString);
+            var databaseProvider = configuration["DatabaseProvider"];
+            if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UseSqlite(connectionString);
+            }
+            else if (string.IsNullOrWhiteSpace(databaseProvider) ||
+                     string.Equals(databaseProvider, "PostgreSql", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UseNpgsql(connectionString);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unsupported database provider '{databaseProvider}'.");
+            }
         });
         services.AddScoped<ITradeRepository, EfTradeRepository>();
         services.AddScoped<ITradeOperationsRepository, EfTradeOperationsRepository>();
