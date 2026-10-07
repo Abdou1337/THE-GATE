@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TheGate.Api;
 using TheGate.Application.Trade;
+using TheGate.Domain.Trade;
 using TheGate.Infrastructure.Persistence;
 
 namespace TheGate.Api.Tests;
@@ -170,6 +171,155 @@ public sealed class ApiWorkflowTests
             .Content.ReadFromJsonAsync<OfferListing>();
         Assert.NotNull(remainingOffer);
         Assert.Equal(10m, remainingOffer.RemainingQuantity);
+    }
+
+    [Fact]
+    public async Task Compliance_logistics_payment_and_mutual_closure_follow_the_recorded_responsibilities()
+    {
+        using var factory = new GateApiFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+
+        var producerOrganizationId = Guid.NewGuid();
+        var buyerOrganizationId = Guid.NewGuid();
+        var logisticsOrganizationId = Guid.NewGuid();
+        var paymentPartnerOrganizationId = Guid.NewGuid();
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
+        var offerResponse = await client.PostAsJsonAsync(
+            "/api/offers",
+            new CreateOfferRequest("Cocoa", 100m, 20m, "kg", null));
+        var offer = await offerResponse.Content.ReadFromJsonAsync<OfferListing>();
+        Assert.NotNull(offer);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(buyerOrganizationId, "buyer");
+        var tradeResponse = await client.PostAsJsonAsync(
+            $"/api/offers/{offer.Id}/trades",
+            new RegisterTradeRequest(40m, "kg"));
+        var trade = await tradeResponse.Content.ReadFromJsonAsync<TradeRecordResponse>();
+        Assert.NotNull(trade);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await client.PostAsync($"/api/trades/{trade.Id}/confirm", content: null)).StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(buyerOrganizationId, "buyer");
+        var profile = await (await client.GetAsync("/api/account/me"))
+            .Content.ReadFromJsonAsync<AccountProfileResponse>();
+        Assert.NotNull(profile);
+        Assert.Equal(buyerOrganizationId.ToString(), profile.OrganizationId);
+        Assert.Equal("buyer", profile.OrganizationRole);
+
+        var taskResponse = await client.PostAsJsonAsync(
+            $"/api/trades/{trade.Id}/compliance-tasks",
+            new CreateComplianceTaskRequest(
+                producerOrganizationId,
+                "Certificate of origin",
+                "Competent authority (declared)",
+                "Requirement selected by the trade parties; not regulatory advice.",
+                null));
+        Assert.Equal(HttpStatusCode.Created, taskResponse.StatusCode);
+        var task = await taskResponse.Content.ReadFromJsonAsync<ComplianceTaskView>();
+        Assert.NotNull(task);
+
+        Assert.Equal(
+            HttpStatusCode.Conflict,
+            (await client.PostAsync(
+                $"/api/trades/{trade.Id}/closure-confirmations",
+                content: null)).StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(Guid.NewGuid(), "producer");
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await client.PostAsJsonAsync(
+                $"/api/compliance-tasks/{task.Id}/evidence",
+                new RecordComplianceEvidenceRequest("documents://origin/unauthorized"))).StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await client.PostAsJsonAsync(
+                $"/api/compliance-tasks/{task.Id}/evidence",
+                new RecordComplianceEvidenceRequest("documents://origin/abc"))).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await client.PostAsync($"/api/compliance-tasks/{task.Id}/attest", content: null)).StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(logisticsOrganizationId, "logistics_provider");
+        var shipmentResponse = await client.PostAsJsonAsync(
+            $"/api/trades/{trade.Id}/shipments",
+            new CreateShipmentRequest("provider-reference-001"));
+        Assert.Equal(HttpStatusCode.Created, shipmentResponse.StatusCode);
+        var shipment = await shipmentResponse.Content.ReadFromJsonAsync<LogisticsShipmentView>();
+        Assert.NotNull(shipment);
+
+        Assert.Equal(
+            HttpStatusCode.Conflict,
+            (await client.PostAsJsonAsync(
+                $"/api/trades/{trade.Id}/shipments/{shipment.Id}/milestones",
+                new RecordLogisticsMilestoneRequest(LogisticsMilestoneType.Booking, "provider://booking/1"))).StatusCode);
+
+        foreach (var milestone in Enum.GetValues<LogisticsMilestoneType>())
+        {
+            Assert.Equal(
+                HttpStatusCode.Created,
+                (await client.PostAsJsonAsync(
+                    $"/api/trades/{trade.Id}/shipments/{shipment.Id}/milestones",
+                    new RecordLogisticsMilestoneRequest(milestone, $"provider://shipment/{(int)milestone}"))).StatusCode);
+        }
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(buyerOrganizationId, "buyer");
+        var paymentResponse = await client.PostAsJsonAsync(
+            $"/api/trades/{trade.Id}/payment-obligations",
+            new CreatePaymentObligationRequest(
+                buyerOrganizationId,
+                producerOrganizationId,
+                paymentPartnerOrganizationId,
+                1250.50m,
+                "XAF",
+                "External provider declared by parties",
+                "provider-ref-001"));
+        Assert.Equal(HttpStatusCode.Created, paymentResponse.StatusCode);
+        var obligation = await paymentResponse.Content.ReadFromJsonAsync<PaymentObligation>();
+        Assert.NotNull(obligation);
+        Assert.Equal(PaymentObligationStatus.Pending, obligation.Status);
+
+        Assert.Equal(
+            HttpStatusCode.Conflict,
+            (await client.PostAsync(
+                $"/api/trades/{trade.Id}/closure-confirmations",
+                content: null)).StatusCode);
+
+        client.DefaultRequestHeaders.Authorization =
+            factory.BearerToken(paymentPartnerOrganizationId, "payment_partner");
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await client.PostAsync(
+                $"/api/payment-obligations/{obligation.Id}/partner-report",
+                content: null)).StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
+        var producerClosure = await client.PostAsync(
+            $"/api/trades/{trade.Id}/closure-confirmations",
+            content: null);
+        Assert.Equal(HttpStatusCode.OK, producerClosure.StatusCode);
+        var stillOpen = await producerClosure.Content.ReadFromJsonAsync<TradeRecordResponse>();
+        Assert.NotNull(stillOpen);
+        Assert.Equal("Confirmed", stillOpen.Status);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(buyerOrganizationId, "buyer");
+        var buyerClosure = await client.PostAsync(
+            $"/api/trades/{trade.Id}/closure-confirmations",
+            content: null);
+        Assert.Equal(HttpStatusCode.OK, buyerClosure.StatusCode);
+        var closed = await buyerClosure.Content.ReadFromJsonAsync<TradeRecordResponse>();
+        Assert.NotNull(closed);
+        Assert.Equal("Closed", closed.Status);
+
+        client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/")).StatusCode);
+        Assert.Contains("Découvrez des offres africaines", await client.GetStringAsync("/"));
     }
 
     [Fact]

@@ -13,6 +13,7 @@ public sealed record PaymentObligation
         Guid tradeRecordId,
         Guid payerOrganizationId,
         Guid beneficiaryOrganizationId,
+        Guid paymentPartnerOrganizationId,
         decimal amount,
         string currencyCode,
         string providerName,
@@ -22,9 +23,12 @@ public sealed record PaymentObligation
     {
         if (id == Guid.Empty || tradeRecordId == Guid.Empty ||
             payerOrganizationId == Guid.Empty || beneficiaryOrganizationId == Guid.Empty ||
-            payerOrganizationId == beneficiaryOrganizationId)
+            paymentPartnerOrganizationId == Guid.Empty ||
+            payerOrganizationId == beneficiaryOrganizationId ||
+            paymentPartnerOrganizationId == payerOrganizationId ||
+            paymentPartnerOrganizationId == beneficiaryOrganizationId)
         {
-            throw new ArgumentException("Payment, trade, payer, and distinct beneficiary IDs are required.");
+            throw new ArgumentException("Payment, trade, payer, beneficiary, and independent payment partner IDs are required.");
         }
 
         if (amount <= 0 || decimal.Round(amount, 2) != amount)
@@ -52,6 +56,7 @@ public sealed record PaymentObligation
         TradeRecordId = tradeRecordId;
         PayerOrganizationId = payerOrganizationId;
         BeneficiaryOrganizationId = beneficiaryOrganizationId;
+        PaymentPartnerOrganizationId = paymentPartnerOrganizationId;
         Amount = amount;
         CurrencyCode = currencyCode.Trim().ToUpperInvariant();
         ProviderName = providerName.Trim();
@@ -67,6 +72,8 @@ public sealed record PaymentObligation
     public Guid PayerOrganizationId { get; }
 
     public Guid BeneficiaryOrganizationId { get; }
+
+    public Guid PaymentPartnerOrganizationId { get; }
 
     public decimal Amount { get; }
 

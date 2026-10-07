@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b3b2e">
+  <title>THE GATE — Offres commerciales</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #f3f6f3; color: #18352c; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { background: #0b3b2e; color: white; padding: 1.1rem max(1.25rem, calc((100vw - 1120px) / 2)); }
+    header strong { letter-spacing: .08em; }
+    main { max-width: 1120px; margin: 3rem auto; padding: 0 1.25rem; }
+    h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin: .3rem 0 1rem; line-height: 1.08; }
+    .intro { max-width: 650px; line-height: 1.7; color: #49635a; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: .75rem; margin: 2rem 0 1rem; }
+    input, button { font: inherit; border-radius: .55rem; padding: .75rem 1rem; }
+    input { border: 1px solid #bccbc2; background: white; flex: 1 1 250px; }
+    button, .contact { background: #0b3b2e; border: 0; color: white; text-decoration: none; font-weight: 650; cursor: pointer; }
+    button:hover, .contact:hover { background: #155b45; }
+    #status { min-height: 1.5rem; color: #49635a; }
+    #offers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr)); gap: 1rem; margin-top: 1rem; }
+    .card { background: white; border: 1px solid #dce5de; border-radius: .8rem; padding: 1.25rem; box-shadow: 0 6px 24px #123a2110; }
+    .card h2 { margin: 0 0 .75rem; font-size: 1.25rem; }
+    .facts { color: #49635a; line-height: 1.75; white-space: pre-line; }
+    .contact { display: inline-block; border-radius: .5rem; padding: .65rem .9rem; margin-top: .5rem; }
+    footer { max-width: 1120px; margin: 3rem auto 2rem; padding: 0 1.25rem; color: #61746b; font-size: .9rem; line-height: 1.6; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 600px) { main { margin-top: 2rem; } button { flex: 1; } }
+  </style>
+</head>
+<body>
+  <header><strong>THE GATE</strong><span aria-hidden="true"> · </span><span>Africa Global Trade</span></header>
+  <main>
+    <p>CONNECTER DIRECTEMENT · DOCUMENTEZ CORRECTEMENT</p>
+    <h1>Découvrez des offres africaines.</h1>
+    <p class="intro">Parcourez les quantités et les disponibilités déclarées par les producteurs. Contactez directement le producteur pour discuter des conditions commerciales — THE GATE ne s’interpose pas dans votre négociation.</p>
+    <form class="toolbar" id="search-form">
+      <label class="visually-hidden" for="search">Rechercher un produit</label>
+      <input id="search" name="search" type="search" placeholder="Rechercher un produit" autocomplete="off">
+      <button type="submit">Rechercher</button>
+      <button type="button" id="refresh" aria-label="Recharger les offres">Actualiser</button>
+    </form>
+    <p id="status" role="status" aria-live="polite">Chargement des offres…</p>
+    <section id="offers" aria-label="Offres disponibles"></section>
+  </main>
+  <footer>Les quantités sont déclarées par les producteurs. Elles ne constituent pas une certification indépendante. Toute transaction et tout contrat commercial restent entre l’acheteur et le producteur.</footer>
+  <script>
+    const form = document.querySelector("#search-form");
+    const search = document.querySelector("#search");
+    const status = document.querySelector("#status");
+    const offers = document.querySelector("#offers");
+    let currentOffers = [];
+
+    function render() {
+      const query = search.value.trim().toLocaleLowerCase();
+      const matches = currentOffers.filter(offer => offer.productDescription.toLocaleLowerCase().includes(query));
+      offers.replaceChildren();
+      for (const offer of matches) {
+        const card = document.createElement("article");
+        card.className = "card";
+        const title = document.createElement("h2");
+        title.textContent = offer.productDescription;
+        const facts = document.createElement("p");
+        facts.className = "facts";
+        facts.textContent = `Quantité disponible déclarée : ${offer.remainingQuantity} ${offer.unitCode}\nMinimum direct : ${offer.minimumDirectTradeQuantity} ${offer.unitCode}`;
+        card.append(title, facts);
+        if (offer.externalContactUri) {
+          const contact = document.createElement("a");
+          contact.className = "contact";
+          contact.textContent = "Contacter le producteur";
+          contact.href = offer.externalContactUri;
+          contact.target = "_blank";
+          contact.rel = "noopener noreferrer";
+          card.append(contact);
+        }
+        offers.append(card);
+      }
+      status.textContent = matches.length
+        ? `${matches.length} offre(s) affichée(s).`
+        : "Aucune offre ne correspond à cette recherche.";
+    }
+
+    async function loadOffers() {
+      status.textContent = "Chargement des offres…";
+      try {
+        const response = await fetch("/api/offers", { headers: { Accept: "application/json" } });
+        if (!response.ok) throw new Error("Les offres sont temporairement indisponibles.");
+        currentOffers = await response.json();
+        render();
+      } catch {
+        offers.replaceChildren();
+        status.textContent = "Impossible de charger les offres. Veuillez réessayer.";
+      }
+    }
+
+    form.addEventListener("submit", event => { event.preventDefault(); render(); });
+    document.querySelector("#refresh").addEventListener("click", loadOffers);
+    loadOffers();
+  </script>
+</body>
+</html>

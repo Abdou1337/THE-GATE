@@ -249,7 +249,9 @@ public sealed class EfTradeRepository(TradeDbContext dbContext) : ITradeReposito
             new Quantity(row.AgreedQuantity, row.UnitCode),
             row.RecordedAtUtc,
             Enum.Parse<DirectTradeRecordStatus>(row.Status),
-            row.ProducerConfirmedAtUtc);
+            row.ProducerConfirmedAtUtc,
+            row.ProducerClosedAtUtc,
+            row.BuyerClosedAtUtc);
 
     private static VerificationRow ToRow(IndependentVerificationReport report) =>
         new()

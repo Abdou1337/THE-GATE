@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using TheGate.Api;
@@ -65,11 +66,24 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser()
             .RequireRole("inspector")
             .RequireClaim("organization_id"));
+    options.AddPolicy("trade-party", policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole("producer", "buyer")
+            .RequireClaim("organization_id"));
+    options.AddPolicy("logistics-provider", policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole("logistics_provider")
+            .RequireClaim("organization_id"));
+    options.AddPolicy("payment-partner", policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole("payment_partner")
+            .RequireClaim("organization_id"));
 });
 
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<DirectTradeWorkflow>();
+builder.Services.AddScoped<TradeOperationsWorkflow>();
 builder.Services.AddTradeInfrastructure(builder.Configuration);
 
 var app = builder.Build();
@@ -77,8 +91,11 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapTradeEndpoints();
+app.MapTradeOperationsEndpoints();
 
 app.Run();
 

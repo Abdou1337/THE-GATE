@@ -23,6 +23,7 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString);
         });
         services.AddScoped<ITradeRepository, EfTradeRepository>();
+        services.AddScoped<ITradeOperationsRepository, EfTradeOperationsRepository>();
         return services;
     }
 }

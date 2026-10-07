@@ -63,7 +63,8 @@ public sealed class DirectTradeRecord
             (status == DirectTradeRecordStatus.Closed &&
              (producerClosedAtUtc is null || buyerClosedAtUtc is null)) ||
             (status != DirectTradeRecordStatus.Closed &&
-             (producerClosedAtUtc is not null || buyerClosedAtUtc is not null)))
+             producerClosedAtUtc is not null &&
+             buyerClosedAtUtc is not null))
         {
             throw new ArgumentException("Closed status requires both UTC closure confirmations.", nameof(status));
         }
