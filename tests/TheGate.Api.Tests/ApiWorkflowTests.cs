@@ -152,6 +152,10 @@ public sealed class ApiWorkflowTests
 
         client.DefaultRequestHeaders.Authorization = factory.BearerToken(outsiderOrganizationId, "buyer");
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync($"/api/trades/{trade.Id}")).StatusCode);
+        var outsiderRecords = await (await client.GetAsync("/api/trades/mine"))
+            .Content.ReadFromJsonAsync<TradeRecordResponse[]>();
+        Assert.NotNull(outsiderRecords);
+        Assert.Empty(outsiderRecords);
 
         var inspectorOrganizationId = Guid.NewGuid();
         client.DefaultRequestHeaders.Authorization = factory.BearerToken(inspectorOrganizationId, "inspector");
@@ -544,8 +548,9 @@ internal sealed class GateApiFactory : WebApplicationFactory<Program>
             File.Delete(_databasePath);
         }
     }
+}
 
-    internal sealed class DevelopmentApiFactory : WebApplicationFactory<Program>
+internal sealed class DevelopmentApiFactory : WebApplicationFactory<Program>
     {
         private readonly string _databasePath = Path.Combine(
             Path.GetTempPath(),
@@ -572,5 +577,4 @@ internal sealed class GateApiFactory : WebApplicationFactory<Program>
         }
     }
 
-    internal sealed record DevelopmentModeResponse(bool Enabled);
-}
+internal sealed record DevelopmentModeResponse(bool Enabled);

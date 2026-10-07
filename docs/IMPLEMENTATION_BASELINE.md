@@ -39,9 +39,10 @@ provider integrations.
   task, payment obligation, and shipment recorded in THE GATE to reach its
   designated terminal state. Omitting a record does not prove that an
   off-platform obligation has been fulfilled.
-- A same-origin public web page provides offer discovery. Account/profile
-  identity comes from the configured OIDC issuer; there are no local passwords
-  or account-provisioning screens.
+- A same-origin web client provides public offer discovery and browser workflow
+  forms. Development uses simulated, Development-only cookie personas; there are
+  no real local accounts or passwords. Non-development deployments continue to
+  validate OIDC JWTs and must not enable demo identities.
 
 ## API surface
 
@@ -54,6 +55,7 @@ provider integrations.
 | `POST` | `/api/offers/{offerId}/trades` | Buyer | Record buyer's declared agreement; no stock reservation |
 | `POST` | `/api/trades/{tradeRecordId}/confirm` | Producer | Confirm the trade and atomically allocate stock |
 | `GET` | `/api/trades/{tradeRecordId}` | Trade parties | Read the administrative trade record |
+| `GET` | `/api/trades/mine` | Producer or buyer | List records involving the caller's organization |
 | `POST` | `/api/trades/{tradeRecordId}/verifications` | Inspector | Record a separate measured quantity and evidence reference |
 | `GET` | `/api/trades/{tradeRecordId}/verifications` | Trade parties | Read verification reports |
 | `GET` | `/api/account/me` | Authenticated user | Read identity and organization claims from the trusted token |
@@ -70,18 +72,44 @@ provider integrations.
 | `POST` | `/api/trades/{tradeRecordId}/closure-confirmations` | Producer or buyer | Confirm closure after recorded readiness gates pass |
 
 The platform records parties' declarations; it does not become a party to their
-commercial contract or independently accredit inspectors. The client at `/`
-provides responsive public offer discovery, search by product and unit, and
-transparent role-specific workflow guidance for producers, buyers, inspectors,
-logistics providers, and payment partners. It does not yet provide authenticated
-task management screens; those operations remain available through the API and a
-production identity-provider UI must be selected and integrated before those
-private workflows can be exposed in the browser.
+commercial contract or independently accredit inspectors. The responsive client
+at `/` provides public discovery; `/workspace.html` provides Development-only
+persona sign-in and forms for existing API workflows. Development uses local
+SQLite and sample listings without requiring PostgreSQL or identity-provider
+credentials. The browser workspace is for local MVP evaluation only: real users
+require a production OIDC provider and account/organization provisioning.
 
 ## Configuration and database
 
 Provide configuration through the deployment environment or a secret manager;
 do not commit credentials.
+
+### Run locally with Visual Studio
+
+Open `THE GATE.slnx`, set `src/TheGate.Api/TheGate.Api.csproj` as the startup
+project if needed, and press **F5** with the `http` launch profile. Visual Studio
+opens `http://localhost:5247/`. Previously the API did start, but no browser
+opened because `launchBrowser` was `false` in the API project's
+`Properties/launchSettings.json`.
+
+The Development profile initializes
+`src/TheGate.Api/App_Data/the-gate-dev.db` and seeds illustrative listings on
+first launch. Select **Accéder à mon espace** and choose a demo persona to use
+the browser workflows. These fictional identities require no password and are
+available only when `ASPNETCORE_ENVIRONMENT=Development`; never deploy that
+environment to production. Delete the SQLite file to reset local sample data.
+SQLite is intentionally Development-only; deployed environments use PostgreSQL
+and explicit EF migrations.
+
+The same local profile can be started from a terminal:
+
+```sh
+dotnet run --project src/TheGate.Api/TheGate.Api.csproj --launch-profile http
+```
+
+Outside Development, configure a real HTTPS OIDC issuer and PostgreSQL
+connection string. SQLite startup is rejected outside Development. The example
+identity URLs below are placeholders, not a configured identity service.
 
 ```sh
 export ConnectionStrings__TradeDatabase='Host=localhost;Database=the_gate;Username=the_gate_app'

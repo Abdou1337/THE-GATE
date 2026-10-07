@@ -303,12 +303,30 @@
           const form = document.createElement("form");
           form.className = "form-grid";
           form.style.marginTop = "12px";
-          form.innerHTML = `<div class="field"><label>Quantité convenue</label><input type="number" min="${offer.minimumDirectTradeQuantity}" max="${offer.remainingQuantity}" step="0.001" required></div><button class="primary" type="submit">Enregistrer mon intention</button><p class="form-message full" role="status"></p>`;
+          const quantityField = document.createElement("div");
+          quantityField.className = "field";
+          const quantityLabel = document.createElement("label");
+          quantityLabel.textContent = "Quantité convenue";
+          const quantityInput = document.createElement("input");
+          quantityInput.type = "number";
+          quantityInput.min = String(offer.minimumDirectTradeQuantity);
+          quantityInput.max = String(offer.remainingQuantity);
+          quantityInput.step = "0.001";
+          quantityInput.required = true;
+          quantityField.append(quantityLabel, quantityInput);
+          const submit = document.createElement("button");
+          submit.className = "primary";
+          submit.type = "submit";
+          submit.textContent = "Enregistrer mon intention";
+          const formMessage = document.createElement("p");
+          formMessage.className = "form-message full";
+          formMessage.setAttribute("role", "status");
+          form.append(quantityField, submit, formMessage);
           form.addEventListener("submit", async event => {
             event.preventDefault();
-            const message = form.querySelector(".form-message");
+            const message = formMessage;
             try {
-              const agreedQuantity = Number(form.querySelector("input").value);
+              const agreedQuantity = Number(quantityInput.value);
               const result = await api(`/api/offers/${offer.id}/trades`, {
                 method: "POST",
                 body: JSON.stringify({ agreedQuantity, unitCode: offer.unitCode })

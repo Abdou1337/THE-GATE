@@ -151,7 +151,7 @@ public sealed class EfTradeRepository(TradeDbContext dbContext) : ITradeReposito
             .Where(row =>
                 row.ProducerOrganizationId == organizationId ||
                 row.BuyerOrganizationId == organizationId)
-            .OrderByDescending(row => row.RecordedAtUtc)
+            .OrderByDescending(row => row.Id)
             .Take(100)
             .ToListAsync(cancellationToken);
 
