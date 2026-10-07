@@ -5,4 +5,7 @@
     <Project Path="src/TheGate.Domain/TheGate.Domain.csproj" />
     <Project Path="src/TheGate.Infrastructure/TheGate.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TheGate.Api.Tests/TheGate.Api.Tests.csproj" />
+  </Folder>
 </Solution>
