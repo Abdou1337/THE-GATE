@@ -176,7 +176,8 @@ public sealed class ApiWorkflowTests
     [Fact]
     public async Task Compliance_logistics_payment_and_mutual_closure_follow_the_recorded_responsibilities()
     {
-        using var factory = new GateApiFactory();
+        using var factory = new GateApiFactory(
+            Environment.GetEnvironmentVariable("THE_GATE_TEST_POSTGRES_CONNECTION"));
         await factory.InitializeDatabaseAsync();
         using var client = factory.CreateClient();
 
@@ -292,6 +293,14 @@ public sealed class ApiWorkflowTests
                 content: null)).StatusCode);
 
         client.DefaultRequestHeaders.Authorization =
+            factory.BearerToken(Guid.NewGuid(), "payment_partner");
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await client.PostAsync(
+                $"/api/payment-obligations/{obligation.Id}/partner-report",
+                content: null)).StatusCode);
+
+        client.DefaultRequestHeaders.Authorization =
             factory.BearerToken(paymentPartnerOrganizationId, "payment_partner");
         Assert.Equal(
             HttpStatusCode.OK,
@@ -299,23 +308,31 @@ public sealed class ApiWorkflowTests
                 $"/api/payment-obligations/{obligation.Id}/partner-report",
                 content: null)).StatusCode);
 
+        using var producerClosureClient = factory.CreateClient();
+        using var buyerClosureClient = factory.CreateClient();
+        producerClosureClient.DefaultRequestHeaders.Authorization =
+            factory.BearerToken(producerOrganizationId, "producer");
+        buyerClosureClient.DefaultRequestHeaders.Authorization =
+            factory.BearerToken(buyerOrganizationId, "buyer");
+        var closureResponses = await Task.WhenAll(
+            producerClosureClient.PostAsync(
+                $"/api/trades/{trade.Id}/closure-confirmations",
+                content: null),
+            buyerClosureClient.PostAsync(
+                $"/api/trades/{trade.Id}/closure-confirmations",
+                content: null));
+        Assert.All(closureResponses, response => Assert.Equal(HttpStatusCode.OK, response.StatusCode));
+        var closureRecords = await Task.WhenAll(
+            closureResponses[0].Content.ReadFromJsonAsync<TradeRecordResponse>(),
+            closureResponses[1].Content.ReadFromJsonAsync<TradeRecordResponse>());
+        Assert.All(closureRecords, record => Assert.NotNull(record));
+        Assert.Contains(closureRecords, record => record!.Status == "Closed");
+
         client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
         var producerClosure = await client.PostAsync(
             $"/api/trades/{trade.Id}/closure-confirmations",
             content: null);
-        Assert.Equal(HttpStatusCode.OK, producerClosure.StatusCode);
-        var stillOpen = await producerClosure.Content.ReadFromJsonAsync<TradeRecordResponse>();
-        Assert.NotNull(stillOpen);
-        Assert.Equal("Confirmed", stillOpen.Status);
-
-        client.DefaultRequestHeaders.Authorization = factory.BearerToken(buyerOrganizationId, "buyer");
-        var buyerClosure = await client.PostAsync(
-            $"/api/trades/{trade.Id}/closure-confirmations",
-            content: null);
-        Assert.Equal(HttpStatusCode.OK, buyerClosure.StatusCode);
-        var closed = await buyerClosure.Content.ReadFromJsonAsync<TradeRecordResponse>();
-        Assert.NotNull(closed);
-        Assert.Equal("Closed", closed.Status);
+        Assert.Equal(HttpStatusCode.Conflict, producerClosure.StatusCode);
 
         client.DefaultRequestHeaders.Authorization = factory.BearerToken(producerOrganizationId, "producer");
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/")).StatusCode);

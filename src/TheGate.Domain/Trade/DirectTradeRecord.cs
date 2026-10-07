@@ -202,6 +202,11 @@ public sealed class DirectTradeRecord
             throw new InvalidOperationException("Agreed quantity is below the minimum direct trade quantity.");
         }
 
+        if (agreedQuantity.Value > offer.DeclaredQuantity.Value)
+        {
+            throw new InvalidOperationException("Agreed quantity cannot exceed the offer's declared quantity.");
+        }
+
         return new DirectTradeRecord(
             Guid.NewGuid(),
             offer.Id,
